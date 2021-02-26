@@ -18,7 +18,7 @@ End
 
 Public Sub TxRxFast(Command As String) As String
   Dim CommandToSend As String
-  Dim ReplyFromCpu As String = "12345678901234567890"
+  Dim ReplyFromCpu As String = "123456789012345678901234567890"
   Dim bytecnt As Integer
   If (SerialPortCpu == "")
     Print "Error in TxRxFast: no serial port defined\n";
@@ -30,7 +30,7 @@ Public Sub TxRxFast(Command As String) As String
     CommandToSend = CommandToSend & "\n"
   Endif
     
-  bytecnt = SerialTxRx(SerialPortCpu, CommandToSend, VarPtr(ReplyFromCpu), 20)
+  bytecnt = SerialTxRx(SerialPortCpu, CommandToSend, VarPtr(ReplyFromCpu), 30)
   If (bytecnt > 1)
     ReplyFromCpu = Left$(ReplyFromCpu, bytecnt - 1)
   Endif

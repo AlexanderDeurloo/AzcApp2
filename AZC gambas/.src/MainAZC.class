@@ -64,7 +64,7 @@ Public Ini_Path As String = "~/Settings/AZC.ini"
 
 Public Sub Menu_Home_About_Click()
   Dim AboutMessage As String
-  AboutMessage = "Zonale Centrifuge.\nMechanics: De Koning\nControl: MediQuip"
+  AboutMessage = "Zonale Centrifuge.\nMediQuip\nThe Netherlands\nmediquip@kpnplanet.nl"
   Message.info(AboutMessage)
 End
 
@@ -80,7 +80,7 @@ Public Sub Menu_Home_Shutdown_Click()
   If nogo = False Then SerialHandler.TxRxFast(off.stirrer_rotate)
   Wait 1
 '  IF (Var_Array[Auto_Shutdown, Var_Ini] = "1") THEN 
-  StatusBox.Text = "Machine will switch off after you shutdown the computer."
+  StatusBox.Text = "Machine will switch off automatically."
       Print " auto down"
     SerialHandler.TxRxFast("shutdown")
     Wait 2
@@ -109,17 +109,11 @@ Public Sub Form_Open()
   Stirrer_Dirty = False ' debug : save time
   Bowl_Dirty = False  ' debug : save time
   
-  'LevelBit = FALSE
   protect = True                ' locks menu items
   Set_To_Disable()
 
   Me.Maximized = True
-  'ME.Width = 900
-  'ME.Height = 700
-  
 
-  
-  '
   ProgressElapsedTimer.Delay = 1000   ' 1 sec interval
   ProgressElapsedTimer.Enabled = False
 
@@ -147,8 +141,8 @@ End
 
 
 Public Sub Init_Machine() As Boolean
-    ' link to PLC
     Dim i As Integer
+    ' link to PLC
     Dim fillcmd As String
     Led.Control(Led_MagLevel, "busy")
     Led.Control(Led_KaolineLevel, "busy")
@@ -167,24 +161,11 @@ Public Sub Init_Machine() As Boolean
     ReceivedData = SerialCpuComm.TxRxFast("PlcPresent")
     If Comp(ReceivedData, "CpuPresent")
       Print "Cpu didn't reply properly: " & ReceivedData
-      Message.Error("No contact with PLC", "Stop")
+      Message.Error("No contact with Cpu", "Stop")
       Quit
     Endif
     StatusBox.Text = "Cpu ready..."
     Wait 1
-    
-    'PlcOutputs.Set("StirrerPower", 1)
-    'Wait 1
-    'PlcOutputs.Set("InputMotor", 1)
-    'Wait 1
-    'PlcOutputs.Set("AirTubeValveSample", 1)
-    'Wait 1
-    ' PlcOutputs.Set("AirTubeValveSample", 0)
-    'Wait 1
-    ' PlcOutputs.Set("StirrerPower", 0)
-    'Wait 1
-    'PlcOutputs.Set("InputMotor", 0)
-    'Wait 1
    
     Print " first tx done"
   
@@ -240,15 +221,24 @@ Public Sub Init_Machine() As Boolean
     Wait 0.5
     PlcOutputs.Set("WaterValveHpPump", 1) ' since water buffer of HP can be empty at startup
     ' generate command for PLC to inform about the waterfill timeout.
-    fillcmd = {On}.Water_Fill_TimeOut & (Var_Array[Timeout_Water_Fill_Valve, Var_Ini])
-    Print "fillcmd = " & fillcmd
-    Wait 2
-    Quit 'debugger
+    fillcmd = "waterfilltimeout " & (Var_Array[Timeout_Water_Fill_Valve, Var_Ini])
+    ReceivedData = SerialCpuComm.TxRxFast(fillcmd)
+    Print ReceivedData
     
     'ReceivedData = SerialHandler.TxRxFast(fillcmd)
     Wait 0.5                        'china
-    fillcmd = {On}.input_store_next_TimeOut & (Var_Array[Timeout_Input_Store_Rotate, Var_Ini]) 'china
-    ReceivedData = SerialHandler.TxRxFast(fillcmd)  'china
+    'fillcmd = {On}.input_store_next_TimeOut & (Var_Array[Timeout_Input_Store_Rotate, Var_Ini]) 'china
+    'ReceivedData = SerialHandler.TxRxFast(fillcmd)  'china
+    'ReceivedData = SerialCpuComm.TxRxFast(fillcmd)
+    'print ReceivedData
+    
+    'SerialCpuComm.TxRxFast("waterfillstop")
+    'Print Check.Fill_Status()
+    'SerialCpuComm.TxRxFast("waterfillstart")
+    'For i = 0 To i + 14
+    '  Print Check.TubeValve_Kaoline()
+    '  Wait 2
+    'Next
 End
 
 
@@ -257,9 +247,9 @@ Public Sub Process_Start()
     StopProcess = 0
     Print "Process start"
     StatusText("Checking levels..")
-    SerialHandler.TxRxFast(off.lamp_green)
-    SerialHandler.TxRxFast(off.lamp_orange)
-    SerialHandler.TxRxFast(off.lamp_red)
+    'SerialHandler.TxRxFast(off.lamp_green)
+    'SerialHandler.TxRxFast(off.lamp_orange)
+    'SerialHandler.TxRxFast(off.lamp_red)
     ProcessCTRL.Bowl_Stopped = True
   ' check Mag AND kao levels
     If Check.Magnesium_Level() = "true" Then
@@ -267,8 +257,7 @@ Public Sub Process_Start()
     Else
       Led.Control(Led_MagLevel, "error")
       SerialHandler.TxRxFast(off.lamp_green)
-      ' [GB2:KEYW] SerialHandler.TxRxFast(on.lamp_red)
-      SerialHandler.TxRxFast({On}.lamp_red)
+      'SerialHandler.TxRxFast({On}.lamp_red)
       Message.Error("Magnesium Level too low")
       Goto Finish
     Endif
@@ -276,48 +265,42 @@ Public Sub Process_Start()
       Led.Control(Led_KaolineLevel, "on")
     Else
       Led.Control(Led_KaolineLevel, "error")
-      SerialHandler.TxRxFast(off.lamp_green)
-      ' [GB2:KEYW] SerialHandler.TxRxFast(on.lamp_red)
-      SerialHandler.TxRxFast({On}.lamp_red)
+      'SerialHandler.TxRxFast(off.lamp_green)
+      'SerialHandler.TxRxFast({On}.lamp_red)
       Message.Error("Kaoline Level too low")
       Goto Finish
     Endif
   ' synchronize machine
     StatusText("Synchronize machine..")
     i = SyncMachine.Go()
-    SerialHandler.TxRxFast(off.lamp_green)
-    SerialHandler.TxRxFast(off.lamp_orange)
-    SerialHandler.TxRxFast(off.lamp_red)
+    'SerialHandler.TxRxFast(off.lamp_green)
+    'SerialHandler.TxRxFast(off.lamp_orange)
+    'SerialHandler.TxRxFast(off.lamp_red)
     Print "end sync: " & i
     If (i = 2) Then Goto Finish
 
-    ' [GB2:KEYW] SerialHandler.TxRxFast(on.lamp_orange)
-    SerialHandler.TxRxFast({On}.lamp_orange)
+    'SerialHandler.TxRxFast({On}.lamp_orange)
     Wait 1
     Print "still processing "
     ' search for input container
     StatusText("Looking for containers..")
     If Search.Input_Container() = "ERR" Then
-      ' [GB2:KEYW] SerialHandler.TxRxFast(on.lamp_red)
-      SerialHandler.TxRxFast({On}.lamp_red)
+      'SerialHandler.TxRxFast({On}.lamp_red)
       Message.Error("No container at input detected")
-      SerialHandler.TxRxFast(off.lamp_red)
-      SerialHandler.TxRxFast(off.lamp_orange)
-      ' [GB2:KEYW] SerialHandler.TxRxFast(on.lamp_green)
-      SerialHandler.TxRxFast({On}.lamp_green)
+      'SerialHandler.TxRxFast(off.lamp_red)
+      'SerialHandler.TxRxFast(off.lamp_orange)
+      'SerialHandler.TxRxFast({On}.lamp_green)
       Goto Finish   ' was return
     Endif
     If StopProcess = 1 Then Goto finish
     ProcessCTRL.Input_Container = True
     ' search for output container
     If Search.Output_Container() = "ERR" Then
-      ' [GB2:KEYW] SerialHandler.TxRxFast(on.lamp_red)
-      SerialHandler.TxRxFast({On}.lamp_red)
+      'SerialHandler.TxRxFast({On}.lamp_red)
       Message.Error("No container at output detected")
-      SerialHandler.TxRxFast(off.lamp_red)
-      SerialHandler.TxRxFast(off.lamp_orange)
-      ' [GB2:KEYW] SerialHandler.TxRxFast(on.lamp_green)
-      SerialHandler.TxRxFast({On}.lamp_green)
+      'SerialHandler.TxRxFast(off.lamp_red)
+      'SerialHandler.TxRxFast(off.lamp_orange)
+      'SerialHandler.TxRxFast({On}.lamp_green)
       Goto Finish   ' was return
     Endif
     If StopProcess = 1 Then Goto finish
@@ -334,10 +317,9 @@ Finish:
   If StopProcess = 1 Then
     Stop_Process()
   Endif
-  SerialHandler.TxRxFast(off.lamp_orange)
-  SerialHandler.TxRxFast(off.lamp_red)
-  ' [GB2:KEYW] SerialHandler.TxRxFast(on.lamp_green)
-  SerialHandler.TxRxFast({On}.lamp_green)
+  'SerialHandler.TxRxFast(off.lamp_orange)
+  'SerialHandler.TxRxFast(off.lamp_red)
+  'SerialHandler.TxRxFast({On}.lamp_green)
   Set_To_Stop() ' buttons, etc
   StatusBox.Text = "Ready"
   Return
@@ -360,13 +342,6 @@ Public Sub Increment_Counter(cnt As Integer)
   Processes.Text = cnt
 End
 
-
-'PUBLIC SUB Bowl_Process()
-'   SerialHandler.Transmit(on.lamp_orange)
-'  WAIT 1
-'  SerialHandler.Transmit(on.lamp_green)
-'  WAIT 1
-'END
 
 
 
@@ -648,29 +623,26 @@ End
 
 Public Sub Menu_Adv_Clean_Stirrer_Click()
   Set_To_Disable()
-  SerialHandler.TxRxFast(off.lamp_green)
-  ' [GB2:KEYW] SerialHandler.TxRxFast(on.lamp_orange)
-  SerialHandler.TxRxFast({On}.lamp_orange)
+  ' SerialHandler.TxRxFast(off.lamp_green)
+  ' SerialHandler.TxRxFast({On}.lamp_orange)
   StatusBox.Text = "Cleaning Stirrer"
   Led.Control(Led_StirrerClean, "busy")
   Print "setup stir clean"
   MainAZC.Fill_Time_Table() ' loads all timer settings in variables.
-  ' [GB2:KEYW] SerialHandler.TxRxFast(on.lamp_red)
-  SerialHandler.TxRxFast({On}.lamp_red)
+  ' SerialHandler.TxRxFast({On}.lamp_red)
 
   'CleanMachine.Stir_Clean_Pending = FALSE
   CleanMachine.Stir_Clean_Setup = False
   CleanMachine.Stir(TimeTable.Stirrer_Clean_Time)
   MainAZC.update_leds()
   Print "waiting via .all"
-  CleanMachine.All(True)
+  CleanMachine.All(True)  ' true means: skip bowl
 
   Led.Control(Led_StirrerClean, "on")
   Print "lamp off"
-  SerialHandler.TxRxFast(off.lamp_red)
-  SerialHandler.TxRxFast(off.lamp_orange)
-  ' [GB2:KEYW] SerialHandler.TxRxFast(on.lamp_green)
-  SerialHandler.TxRxFast({On}.lamp_green)
+  'SerialHandler.TxRxFast(off.lamp_red)
+  'SerialHandler.TxRxFast(off.lamp_orange)
+  'SerialHandler.TxRxFast({On}.lamp_green)
   Set_To_Stop()
   StatusBox.Text = "Ready"
 End
@@ -678,52 +650,27 @@ End
 
 Public Sub Menu_Adv_Clean_Bowl_Click()
   Set_To_Disable()
-  SerialHandler.TxRxFast(off.lamp_green)
-  ' [GB2:KEYW] SerialHandler.TxRxFast(on.lamp_orange)
-  SerialHandler.TxRxFast({On}.lamp_orange)
+  'SerialHandler.TxRxFast(off.lamp_green)
+  'SerialHandler.TxRxFast({On}.lamp_orange)
   StatusBox.Text = "Cleaning Bowl"
   Led.Control(Led_BowlClean, "busy")
   Print "setup bowl clean"
   MainAZC.Fill_Time_Table() ' loads all timer settings in variables.
-  ' [GB2:KEYW] SerialHandler.TxRxFast(on.lamp_red)
-  SerialHandler.TxRxFast({On}.lamp_red)
+  'SerialHandler.TxRxFast({On}.lamp_red)
   MainAZC.update_leds()
   ProcessCTRL.Bowl_Stopped = True
   CleanMachine.Bowl_Setup()
   Print "setup bowl done"
   Led.Control(Led_BowlClean, "on")
   Print "lamp off"
-  SerialHandler.TxRxFast(off.lamp_red)
-  SerialHandler.TxRxFast(off.lamp_orange)
-  ' [GB2:KEYW] SerialHandler.TxRxFast(on.lamp_green)
-  SerialHandler.TxRxFast({On}.lamp_green)
+  'SerialHandler.TxRxFast(off.lamp_red)
+  'SerialHandler.TxRxFast(off.lamp_orange)
+  'SerialHandler.TxRxFast({On}.lamp_green)
   Set_To_Stop()
   StatusBox.Text = "Ready"
 End
 
 
-'PUBLIC SUB Clean_All()
-'  Led.Control(Led_StirrerClean, "off")
-'  PRINT "setup stir clean"
-'  Set_To_Disable()
-'  StatusBox.Text = "Clean Stirrer+Clean Bowl"
-'  CleanMachine.Stirrer_Setup(SP_StirrerCleanTime.Value)
-'  PRINT "setup stir done"
-'  Led.Control(Led_BowlClean, "off")
-'  PRINT "setup bowl clean"
-'  Set_To_Disable()
-'  StatusBox.Text = "Clean Stirrer+Clean Bowl"
- ' CleanMachine.Bowl_Setup()
- ' PRINT "setup bowl done"
-'  DO
-'     IF (CleanMachine.Stir_Pending = FALSE) THEN Led.Control(Led_StirrerClean, "on")
-'     IF (CleanMachine.Bowl_Pending = FALSE) THEN Led.Control(Led_BowlClean, "on")
-'    WAIT 1
-'  LOOP UNTIL (CleanMachine.Bowl_Pending = FALSE) AND (CleanMachine.Stir_Pending = FALSE)    ' wait for clean timer to expire and stir stop function to finish.
-'  IF (CleanMachine.Stir_Pending = FALSE) THEN Led.Control(Led_StirrerClean, "on")
-'  IF (CleanMachine.Bowl_Pending = FALSE) THEN Led.Control(Led_BowlClean, "on")
-'  Set_To_Stop()
-'END
 
 Public Sub Fill_Time_Table()
   TimeTable.Stir_Time = SP_StirTime.Value * 1000
@@ -756,14 +703,12 @@ End
 
 Public Sub Menu_Adv_Clean_Sample_Filter_Click()
   Set_To_Disable()
-  SerialHandler.TxRxFast(off.lamp_green)
-  ' [GB2:KEYW] SerialHandler.TxRxFast(on.lamp_orange)
-  SerialHandler.TxRxFast({On}.lamp_orange)
+  'SerialHandler.TxRxFast(off.lamp_green)
+  'SerialHandler.TxRxFast({On}.lamp_orange)
   StatusBox.Text = "Manual clean sample filter"
   Led.Control(Led_BowlClean, "busy")
   Print "setup manual sample filter clean"
-  ' [GB2:KEYW] SerialHandler.TxRxFast(on.lamp_red)
-  SerialHandler.TxRxFast({On}.lamp_red)
+  'SerialHandler.TxRxFast({On}.lamp_red)
   MainAZC.update_leds()
   StirProcess.MoveStirCleanFilter()
   Wait 2
@@ -771,10 +716,9 @@ Public Sub Menu_Adv_Clean_Sample_Filter_Click()
   Print "manual sample filter clean done"
   StirProcess.MoveStir("clean")
   Print "lamp off"
-  SerialHandler.TxRxFast(off.lamp_red)
-  SerialHandler.TxRxFast(off.lamp_orange)
-  ' [GB2:KEYW] SerialHandler.TxRxFast(on.lamp_green)
-  SerialHandler.TxRxFast({On}.lamp_green)
+  'SerialHandler.TxRxFast(off.lamp_red)
+  'SerialHandler.TxRxFast(off.lamp_orange)
+  'SerialHandler.TxRxFast({On}.lamp_green)
   Set_To_Stop()
   StatusBox.Text = "Ready"
 End

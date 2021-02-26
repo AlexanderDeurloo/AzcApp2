@@ -1,14 +1,18 @@
 ' Gambas module file
-Public Sub Drain_Bowl_Position() As String  'A0+A1
+
+Public Sub Drain_Bowl_Position() As String 
+  Dim Forward As Integer
+  Dim Backward As Integer
+  Dim Status As Integer
   Dim Reply As String
-  Dim IN_A As Integer
-  Reply = SerialHandler.TxRxFast("inA?")
-  If Reply = "ERR98" Then Reply = "999"
-  IN_A = Val(Reply)
-  IN_A = IN_A And 3
-  If (IN_A = 1) Then
+  Forward = PlcInputs.Read("BowlDrainForward")
+  Backward = PlcInputs.Read("BowlDrainBackward")
+  Status = (Forward * 2) + Backward
+  If (Status = 0)
+    Reply = "moving"
+  Else If (Status = 1)
     Reply = "off"
-  Else If (IN_A = 2) Then
+  Else If (Status = 2)
     Reply = "on"
   Else
     Reply = "ERR"
@@ -16,16 +20,19 @@ Public Sub Drain_Bowl_Position() As String  'A0+A1
   Return Reply
 End
 
-Public Sub Output_Store_Rotate() As String  'A2+A3
+Public Sub Output_Store_Rotate() As String
+  Dim Forward As Integer
+  Dim Backward As Integer
+  Dim Status As Integer
   Dim Reply As String
-  Dim IN_A As Integer
-  Reply = SerialHandler.TxRxFast("inA?")
-  If Reply = "ERR98" Then Reply = "999"
-  IN_A = Val(Reply)
-  IN_A = IN_A And 12
-  If (IN_A = 4) Then
+  Forward = PlcInputs.Read("OutputRotateOn")
+  Backward = PlcInputs.Read("OutputRotateOff")
+  Status = (Forward * 2) + Backward
+  If (Status = 0)
+    Reply = "moving"
+  Else If (Status = 1)
     Reply = "off"
-  Else If (IN_A = 8) Then
+  Else If (Status = 2)
     Reply = "on"
   Else
     Reply = "ERR"
@@ -33,16 +40,19 @@ Public Sub Output_Store_Rotate() As String  'A2+A3
   Return Reply
 End
 
-Public Sub Output_Store_Move() As String  'A4+A5
+Public Sub Output_Store_Move() As String
+  Dim Forward As Integer
+  Dim Backward As Integer
+  Dim Status As Integer
   Dim Reply As String
-  Dim IN_A As Integer
-  Reply = SerialHandler.TxRxFast("inA?")
-  If Reply = "ERR98" Then Reply = "999"
-  IN_A = Val(Reply)
-  IN_A = IN_A And &h30&
-  If (IN_A = 16) Then
+  Forward = PlcInputs.Read("OutputMoveForward")
+  Backward = PlcInputs.Read("OutputMoveBackward")
+  Status = (Forward * 2) + Backward
+  If (Status = 0)
+    Reply = "moving"
+  Else If (Status = 1)
     Reply = "off"
-  Else If (IN_A = 32) Then
+  Else If (Status = 2)
     Reply = "on"
   Else
     Reply = "ERR"
@@ -50,33 +60,13 @@ Public Sub Output_Store_Move() As String  'A4+A5
   Return Reply
 End
 
-Public Sub Output_Container() As String   'A6
+Public Sub Output_Container() As String
+  Dim Status As Integer
   Dim Reply As String
-  Dim IN_A As Integer
-  Reply = SerialHandler.TxRxFast("inA?")
-  If Reply = "ERR98" Then Reply = "999"
-  IN_A = Val(Reply)
-  IN_A = IN_A And &h40&
-  If (IN_A = 64) Then
+  Status = PlcInputs.Read("OutputContainerPresent")
+  If (Status = 1)
     Reply = "present"
-  Else If (IN_A = 0) Then
-    Reply = "missing"
-  Else
-    Reply = "ERR"
-  Endif
-  Return Reply
-End
-
-Public Sub Input_A7_Status() As String   'A7 = free
-  Dim Reply As String
-  Dim IN_A As Integer
-  Reply = SerialHandler.TxRxFast("inA?")
-  If Reply = "ERR98" Then Reply = "999"
-  IN_A = Val(Reply)
-  IN_A = IN_A And &h80&
-  If (IN_A = 128) Then
-    Reply = "present"
-  Else If (IN_A = 0) Then
+  Else If (Status = 0)
     Reply = "missing"
   Else
     Reply = "ERR"
@@ -85,16 +75,19 @@ Public Sub Input_A7_Status() As String   'A7 = free
 End
 
 
-Public Sub Stirrer_Rotate() As String 'B0+B1
+Public Sub Stirrer_Rotate() As String
+  Dim Forward As Integer
+  Dim Backward As Integer
+  Dim Status As Integer
   Dim Reply As String
-  Dim IN_B As Integer
-  Reply = SerialHandler.TxRxFast("inB?")
-  If Reply = "ERR98" Then Reply = "999"
-  IN_B = Val(Reply)
-  IN_B = IN_B And &h03&
-  If (IN_B = 1) Then
+  Forward = PlcInputs.Read("StirrerLiftRotateForward")
+  Backward = PlcInputs.Read("StirrerLiftRotateBackward")
+  Status = (Forward * 2) + Backward
+  If (Status = 0)
+    Reply = "moving"
+  Else If (Status = 1)
     Reply = "clean"
-  Else If (IN_B = 2) Then
+  Else If (Status = 2)
     Reply = "stir"
   Else
     Reply = "ERR"
@@ -102,33 +95,33 @@ Public Sub Stirrer_Rotate() As String 'B0+B1
   Return Reply
 End
 
-Public Sub Stirrer_Lift() As String 'B2+B3
+Public Sub Stirrer_Lift() As String
+  Dim Forward As Integer
+  Dim Backward As Integer
+  Dim Status As Integer
   Dim Reply As String
-  Dim IN_B As Integer
-  Reply = SerialHandler.TxRxFast("inB?")
-  If Reply = "ERR98" Then Reply = "999"
-  IN_B = Val(Reply)
-  IN_B = IN_B And &h0C&
-  If (IN_B = 4) Then
-    Reply = "up"
-  Else If (IN_B = 8) Then
+  Forward = PlcInputs.Read("StirrerLiftUp")
+  Backward = PlcInputs.Read("StirrerLiftDown")
+  Status = (Forward * 2) + Backward
+  If (Status = 0)
+    Reply = "moving"
+  Else If (Status = 1)
     Reply = "down"
+  Else If (Status = 2)
+    Reply = "up"
   Else
     Reply = "ERR"
   Endif
   Return Reply
 End
 
-Public Sub Input_Container_Fill() As String 'B4
+Public Sub Input_Container_Fill() As String
+  Dim Status As Integer
   Dim Reply As String
-  Dim IN_B As Integer
-  Reply = SerialHandler.TxRxFast("inB?")
-  If Reply = "ERR98" Then Reply = "999"
-  IN_B = Val(Reply)
-  IN_B = IN_B And &h10&
-  If (IN_B = 16) Then
+  Status = PlcInputs.Read("InputContainerPresent")
+  If (Status = 1)
     Reply = "present"
-  Else If (IN_B = 0) Then
+  Else If (Status = 0)
     Reply = "missing"
   Else
     Reply = "ERR"
@@ -137,34 +130,14 @@ Public Sub Input_Container_Fill() As String 'B4
 End
 
 
-Public Sub Input_Container_Stir() As String 'B5
-  Dim Reply As String
-  Dim IN_B As Integer
-  Reply = SerialHandler.TxRxFast("inB?")
-  If Reply = "ERR98" Then Reply = "999"
-  IN_B = Val(Reply)
-  IN_B = IN_B And &h20&
-  If (IN_B = 32) Then
-    Reply = "present"
-  Else If (IN_B = 0) Then
-    Reply = "missing"
-  Else
-    Reply = "ERR"
-  Endif
-  Return Reply
-End
 
-Public Sub Input_Store_Position() As String 'B6
+Public Sub Input_Store_Position() As String
+  Dim Status As Integer
   Dim Reply As String
-  Dim IN_B As Integer
-  Reply = SerialHandler.TxRxFast("inB?")
-  Print Reply
-  If Reply = "ERR98" Then Reply = "999"
-  IN_B = Val(Reply)
-  IN_B = IN_B And &h40&
-  If (IN_B = 64) Then
+  Status = PlcInputs.Read("InputPosition")
+  If (Status = 1)
     Reply = "on"
-  Else If (IN_B = 0) Then
+  Else If (Status = 0)
     Reply = "off"
   Else
     Reply = "ERR"
@@ -172,106 +145,132 @@ Public Sub Input_Store_Position() As String 'B6
   Return Reply
 End
 
+'TODO
 Public Sub Input_Store_Rotate_Done() As String 'input store rotate action completed?
   Dim Reply As String
-  Dim rotate As Integer
-  Reply = SerialHandler.TxRxFast("rotatedone?")
-  rotate = Val(Reply)
-  If (rotate = 1) Then
+  Reply = Input_Store_Position()
+  
+  'Dim rotate As Integer
+  'Reply = SerialHandler.TxRxFast("rotatedone?")
+  'rotate = Val(Reply)
+  If (Reply = "on") Then
     Reply = "done"
-  Else If (rotate = 0) Then
+  Else If (Reply = "off") Then
     Reply = "busy"
-  Else If (rotate = -1) Then
-      Reply = "timeout"
+  'Else If (rotate = -1) Then
+  '    Reply = "timeout"
   Else
       Reply = "err"
   Endif
   Return Reply
 End
 
-Public Sub Input_B7_Status() As String 'B7 = free
+
+
+Public Sub Fill_Status() As String 
   Dim Reply As String
-  Dim IN_B As Integer
-  Reply = SerialHandler.TxRxFast("inB?")
-  If Reply = "ERR98" Then Reply = "999"
-  IN_B = Val(Reply)
-  IN_B = IN_B And &h80&
-  If (IN_B = 128) Then
-    Reply = "on"
-  Else If (IN_B = 0) Then
+  Dim ReceivedData As String
+  ReceivedData = SerialCpuComm.TxRxFast("waterfillstatus?")
+  'Print ReceivedData 'debugger
+  If Comp(ReceivedData, "Stop") = 0 Then
+    Reply = "stopped"
+  Else If Comp(ReceivedData, "Start") = 0 Then
+    Reply = "busy"
+  Else If Comp(ReceivedData, "Pending") = 0 Then
+    Reply = "busy"
+  Else If Comp(ReceivedData, "Done") = 0 Then
+    Reply = "done"
+  Else If Comp(ReceivedData, "Timeout") = 0 Then
+    Reply = "timeout"
+  Else
+      Reply = "err"
+  Endif
+  Return Reply
+End
+
+
+Public Sub Water_Level() As String
+  Dim Status As Integer
+  Dim Reply As String
+  Status = PlcInputs.Read("InputContainerLevel")
+  If (Status = 1)
+    Reply = "true"
+  Else If (Status = 0)
+    Reply = "false"
+  Else
+    Reply = "ERR"
+  Endif
+  Return Reply
+End
+
+
+Public Sub Kaoline_Level() As String
+  Dim Status As Integer
+  Dim Reply As String
+  Status = PlcInputs.Read("KaolineLevel")
+  If (Status = 1)
+    Reply = "true"
+  Else If (Status = 0)
+    Reply = "false"
+  Else
+    Reply = "ERR"
+  Endif
+  Return Reply
+End
+
+
+Public Sub Magnesium_Level() As String
+  Dim Status As Integer
+  Dim Reply As String
+  Status = PlcInputs.Read("MagnesiumLevel")
+  If (Status = 1)
+    Reply = "true"
+  Else If (Status = 0)
+    Reply = "false"
+  Else
+    Reply = "ERR"
+  Endif
+  Return Reply
+End
+
+
+Public Sub TubeValve_Sample() As String
+  Dim Status As Integer
+  Dim Reply As String
+  Status = PlcInputs.Read("TubeValveSample")
+  If (Status = 0)
     Reply = "off"
+  Else If (Status = 1)
+    Reply = "on"
   Else
     Reply = "ERR"
   Endif
   Return Reply
 End
 
-Public Sub Fill_Status() As String  'C1
-  Dim Reply As String
-  Dim Fill As Integer
-  Reply = SerialHandler.TxRxFast("full?")
-  Fill = Val(Reply)
-  If (Fill = 1) Then
-    Reply = "done"
-  Else If (Fill = 0) Then
-    Reply = "busy"
-  Else If (Fill = -1) Then
-      Reply = "timeout"
-  Else If (Fill = -2) Then
-      Reply = "stopped"
-  Else
-      Reply = "err"
-  Endif
-  Return Reply
- 
-  
-  
-End
 
-
-' extra 1
-Public Sub Water_Level() As String  'C1
+Public Sub TubeValve_Magnesium() As String
+  Dim Status As Integer
   Dim Reply As String
-  Dim IN_C As Integer
-  Reply = SerialHandler.TxRxFast("inC1?")
-  If Reply = "ERR98" Then Reply = "999"
-  IN_C = Val(Reply)
-  If (IN_C = 1) Then
-    Reply = "true"
-  Else If (IN_C = 0) Then
-    Reply = "false"
+  Status = PlcInputs.Read("TubeValveMagnesium")
+  If (Status = 0)
+    Reply = "off"
+  Else If (Status = 1)
+    Reply = "on"
   Else
     Reply = "ERR"
   Endif
   Return Reply
 End
-' extra 2
-Public Sub Kaoline_Level() As String  'C2
+
+Public Sub TubeValve_Kaoline() As String
+  Dim Status As Integer
   Dim Reply As String
-  Dim IN_C As Integer
-  Reply = SerialHandler.TxRxFast("inC2?")
-  If Reply = "ERR98" Then Reply = "999"
-  IN_C = Val(Reply)
-  If (IN_C = 1) Then
-    Reply = "true"
-  Else If (IN_C = 0) Then
-    Reply = "false"
-  Else
-    Reply = "ERR"
-  Endif
-  Return Reply
-End
-' extra 3
-Public Sub Magnesium_Level() As String  'C3
-  Dim Reply As String
-  Dim IN_C As Integer
-  Reply = SerialHandler.TxRxFast("inC3?")
-  If Reply = "ERR98" Then Reply = "999"
-  IN_C = Val(Reply)
-  If (IN_C = 1) Then
-    Reply = "true"
-  Else If (IN_C = 0) Then
-    Reply = "false"
+  Status = PlcInputs.Read("TubeValveKaoline")
+  If (Status = 0)
+    Reply = "off"
+  Else If (Status = 1)
+    Reply = "on"
   Else
     Reply = "ERR"
   Endif

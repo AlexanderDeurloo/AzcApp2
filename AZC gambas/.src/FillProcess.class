@@ -1,4 +1,5 @@
 ' Gambas class file
+
 Public InputCount As Integer = 0
 Public StirCount As Integer = 0
 
@@ -100,10 +101,10 @@ Public Sub Stir()
     Return
   Else
     Print " new start stir"
-    If Check.Input_Container_Stir() = "missing" Then
-      Print " error no container at fill"
-      Return   ' return error !!!
-    Endif
+    'If Check.Input_Container_Stir() = "missing" Then
+     ' Print " error no container at fill"
+      'Return   ' return error !!!
+    'Endif
     Print " dirty = "
     Print MainAZC.Stirrer_Dirty
     

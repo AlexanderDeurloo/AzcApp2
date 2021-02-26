@@ -103,7 +103,7 @@ Public Sub Read(Pin As String) As Integer
 
   ' read status:
   piControlRead(ModuleAddress, 1, VarPtr(Result))
-  Print "Result = " & Result
+  'Print "Result = " & Result
   Result = Result And PinAddr
 
   'Print "Result after logic and = " & Result
