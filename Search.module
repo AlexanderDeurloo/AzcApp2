@@ -1,0 +1,107 @@
+' Gambas module file
+PUBLIC SUB Next_Input()
+'   SerialHandler.TxRx(on.input_store_rotate)
+    MainAZC.StatusText("Find next input container...")
+    SerialHandler.TxRxTimed(on.input_store_next, 20000) 'china
+    DO
+      WAIT 0.1
+      IF MainAZC.StopProcess = 1 THEN GOTO finish
+'    LOOP UNTIL Check.Input_Store_Move() = "on"
+    LOOP UNTIL Check.Input_Store_Position() = "on" 'china
+    WAIT 0.5
+    SerialHandler.TxRx(off.input_store_rotate)  'not really needed.
+'    DO
+'      WAIT 0.1
+'      IF MainAZC.StopProcess = 1 THEN GOTO finish
+'    LOOP UNTIL Check.Input_Store_Move() = "off"
+'    LOOP UNTIL Check.Input_Store_Position() = "off" 'china
+    WAIT 0.5
+finish:
+END
+
+PUBLIC SUB Next_Output()
+    MainAZC.StatusText("Find next output container...")
+    SerialHandler.TxRx(on.output_store_rotate)
+    DO
+      WAIT 0.1
+      IF MainAZC.StopProcess = 1 THEN GOTO finish
+    LOOP UNTIL Check.output_store_rotate() = "on"
+    WAIT 0.5
+    SerialHandler.TxRx(off.Output_store_rotate)
+    DO
+      WAIT 0.1
+      IF MainAZC.StopProcess = 1 THEN GOTO finish
+    LOOP UNTIL Check.Output_Store_Rotate() = "off"
+    WAIT 0.5
+finish:
+END
+
+
+PUBLIC SUB Input_Container() AS String
+  DIM Errorcode AS String = "ERR"
+  DIM i AS Integer
+  
+    MainAZC.StatusText("Find input container...")
+  
+  'FOR i = 1 TO 8 STEP 1
+   FOR i = 1 TO Val(MainAZC.Var_Array[MainAZC.Max_Input_Containers, MainAZC.Var_Ini]) STEP 1  'china
+    IF Check.Input_Container_Fill() = "present" THEN 
+      Errorcode = "Found"
+      BREAK
+    ENDIF 
+    PRINT "input_store_next command..."
+'    SerialHandler.TxRx(on.input_store_rotate)
+    SerialHandler.TxRxTimed(on.input_store_next, 20000) 'china
+    PRINT "next done"
+    DO
+      WAIT 0.1
+      PRINT "check position (?)"
+      IF MainAZC.StopProcess = 1 THEN GOTO finish
+'   LOOP UNTIL Check.Input_Store_Move() = "on"
+    LOOP UNTIL Check.Input_Store_Position() = "on"  'china
+    WAIT 0.5
+    PRINT "motor off "
+    SerialHandler.TxRx(off.input_store_rotate)  'china: not really required.
+   ' DO
+     ' WAIT 0.1
+    '  IF MainAZC.StopProcess = 1 THEN GOTO finish
+'    LOOP UNTIL Check.Input_Store_Move() = "off"
+   ' LOOP UNTIL Check.Input_Store_Position() = "off" 'china
+    WAIT 0.5
+    PRINT "next done"
+  NEXT 
+finish:
+  IF MainAZC.StopProcess = 1 THEN RETURN "search cancelled"
+  RETURN Errorcode
+  
+END
+
+PUBLIC SUB Output_Container() AS String
+  DIM Errorcode AS String = "ERR"
+  DIM i AS Integer
+  
+   MainAZC.StatusText("Find output container...")
+  
+  'FOR i = 1 TO 8 STEP 1
+    FOR i = 1 TO Val(MainAZC.Var_Array[MainAZC.Max_Input_Containers, MainAZC.Var_Ini]) STEP 1 'china
+    IF Check.Output_Container() = "present" THEN 
+      Errorcode = "Found"
+      BREAK
+    ENDIF 
+    SerialHandler.TxRxFast(on.output_store_rotate)
+    DO
+      WAIT 0.1
+      IF MainAZC.StopProcess = 1 THEN GOTO finish
+    LOOP UNTIL Check.Output_Store_Rotate() = "on"
+    WAIT 0.5
+    SerialHandler.TxRxFast(off.output_store_rotate)
+    DO
+      WAIT 0.1
+      IF MainAZC.StopProcess = 1 THEN GOTO finish
+    LOOP UNTIL Check.Output_Store_Rotate() = "off"
+    WAIT 0.5
+  NEXT 
+finish:
+  IF MainAZC.StopProcess = 1 THEN RETURN "search cancelled"
+  RETURN Errorcode
+END

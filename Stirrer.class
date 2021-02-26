@@ -1,0 +1,130 @@
+' Gambas class file
+
+
+PUBLIC ReadReady AS Integer
+PUBLIC RecBytes AS Byte[10]
+
+' SetRpm(RPM.Value)
+' SerialOpenStirrer("/dev/ttyS4")
+
+
+
+PUBLIC SUB SerialOpenStirrer(NamePort AS String) AS Integer
+  DIM retry AS Integer
+  WAIT 1  ' required. 0.1 works also.
+  PRINT NamePort  
+  PRINT "about TO OPEN port " & NamePort
+  SerialPortStirrer.PortName = NamePort
+  WAIT 0.2
+  IF SerialPortStirrer.Status = Net.inActive THEN
+    SerialPortStirrer.Speed = 9600
+    SerialPortStirrer.DataBits = 8
+    SerialPortStirrer.StopBits = 1
+    WAIT 0.2
+
+    DO
+      TRY 
+      SerialPortStirrer.Open()
+      IF ERROR THEN 
+        PRINT "retry " & retry & " of 100 opening " & SerialPortStirrer.PortName 
+        IF retry > 2 THEN MainAZC.StatusText("Retry " & retry & " of 100 opening " & SerialPortStirrer.PortName)
+      ELSE 
+        PRINT "Successful opened " & SerialPortStirrer.PortName
+        IF retry > 2 THEN MainAZC.StatusText(SerialPortStirrer.PortName & " opened successful.")
+        BREAK 
+      ENDIF 
+      WAIT 2
+      INC retry
+    LOOP UNTIL retry = 100
+
+    WAIT 0.2
+    ReadReady = 1
+    RETURN 0    ' serial port okay
+  ENDIF 
+  RETURN 1    ' serial port not available
+END
+
+PUBLIC SUB SerialCloseStirrer()
+  IF SerialPortStirrer.Status = Net.Active THEN CLOSE SerialPortStirrer
+END
+
+
+PUBLIC SUB Transmit(TXdata AS Byte[])
+  DIM index AS Integer
+  IF SerialPortStirrer.Status = Net.Inactive THEN
+    RETURN 
+  ELSE
+  PRINT "stirrer transmit: wait until readready"
+  DO
+    WAIT 0.01
+  LOOP UNTIL ReadReady = 1
+  WAIT 0.05
+    ReadReady = 0
+    index = 0
+    DO
+      WAIT 0.06
+      'PRINT "index = " & index & " = " & Hex$(TXdata[index])
+      WRITE #SerialPortStirrer, (TXdata[index])
+      INC index
+    LOOP UNTIL index > 5
+    PRINT "stirrer transmit: done"
+    RETURN 
+  END IF
+END 
+
+
+PUBLIC SUB SerialPortStirrer_Read() 'called automatically 
+  DIM Answer AS String
+  DIM ReadIndex AS Integer
+  
+  READ #SerialPortStirrer, Answer, Lof(SerialPortStirrer) 
+
+  FOR ReadIndex = 1 TO 7 STEP 1
+    RecBytes[ReadIndex] = Asc(Mid$(Answer, ReadIndex, 1)) 'convert from string to integer
+    'PRINT Hex$(RecBytes[ReadIndex]) 'display as hex
+  NEXT 
+  ReadReady = 1
+  PRINT "stirrer read done"
+END
+
+
+
+
+PUBLIC SUB SetRpm(RPM AS Integer) AS Integer
+  DIM StirrerData AS Byte[7]
+  DIM checksum AS Integer
+  IF RPM < 100 THEN RPM = 0
+  StirrerData[0] = &hFE
+  StirrerData[1] = &hA1 'get status
+  StirrerData[2] = 0
+  StirrerData[3] = 0
+  StirrerData[4] = 0
+  StirrerData[5] = &hA1
+  Transmit(StirrerData)
+  WAIT 0.3
+  IF RecBytes[4] = 0 THEN 
+    PRINT "stirrer is closed. no need to send 0 rpm"
+  ELSE 
+    PRINT "stirrer is open. close it by sending 0 rpm"
+    StirrerData[0] = &hFE
+    StirrerData[1] = &hB1
+    StirrerData[2] = 0
+    StirrerData[3] = 0
+    StirrerData[4] = 0
+    StirrerData[5] = &hB1
+    Transmit(StirrerData)
+  ENDIF 
+  'send required RPM:
+  StirrerData[0] = &hFE
+  StirrerData[1] = &hB1
+  StirrerData[2] = (Shr(RPM, 8)) AND 255
+  StirrerData[3] = RPM AND 255
+  StirrerData[4] = &h00
+  'checksum:
+  checksum = (StirrerData[1] + StirrerData[2] + StirrerData[3] + StirrerData[4]) AND 255
+  StirrerData[5] = checksum
+  Transmit(StirrerData)
+  RETURN 0
+END 
+
+

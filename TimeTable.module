@@ -1,0 +1,25 @@
+' Gambas module file
+
+PUBLIC Stir_Time AS Integer
+
+PUBLIC Magnesium_Fill_Time AS Integer
+PUBLIC Kaoline_Fill_Time AS Integer
+PUBLIC Sample_Time AS Integer
+PUBLIC Bowl_Stop_Delay AS Integer
+PUBLIC Bowl_Speedup_Time AS Integer
+PUBLIC Bowl_Water_Fill_Time AS Integer
+PUBLIC Kaoline_Valve_Clean_Time AS Integer
+PUBLIC Centrifuge_Time AS Integer
+PUBLIC Output_Capture_Time AS Integer
+PUBLIC Bowl_Clean_Time AS Integer
+
+PUBLIC Stirrer_Clean_Time AS Integer
+PUBLIC Tube_Clean AS Integer
+PUBLIC Bowl_Clean_Phase1_Time AS Integer
+PUBLIC Bowl_Clean_Phase2_Time AS Integer
+PUBLIC Bowl_Clean_Phase3_Time AS Integer
+PUBLIC Motor_ACC AS Integer
+PUBLIC Motor_DEC AS Integer
+
+
+

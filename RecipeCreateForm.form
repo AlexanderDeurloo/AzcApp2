@@ -1,0 +1,190 @@
+# Gambas Form File 2.0
+
+{ Form Form
+  MoveScaled(0,0,116,87)
+  Visible = False
+  Text = ("Create Recipe")
+  Border = Window.Fixed
+  SkipTaskbar = True
+  { CreatFormFile Menu
+    Text = ("File")
+    { CreateFormLoad Menu
+      Text = ("&Load")
+    }
+    { CreateFormSave Menu
+      Text = ("&Save")
+    }
+    { CreateFormExit Menu
+      Text = ("&Exit")
+    }
+  }
+  { Label1 Label
+    MoveScaled(29,10,24,3)
+    Text = ("Stir Time")
+    Alignment = Align.Right
+  }
+  { Label2 Label
+    MoveScaled(64,10,24,3)
+    Text = ("seconds")
+  }
+  { SpinBox1 SpinBox
+    MoveScaled(54,10,9,3)
+    MinValue = 1
+    MaxValue = 1000
+    Value = 20
+  }
+  { Label3 Label
+    MoveScaled(29,15,24,3)
+    Text = ("Stirrer Clean Time")
+    Alignment = Align.Right
+  }
+  { Label4 Label
+    MoveScaled(64,15,24,3)
+    Text = ("seconds")
+  }
+  { SpinBox2 SpinBox
+    MoveScaled(54,15,9,3)
+    MinValue = 1
+    MaxValue = 10000
+  }
+  { Label5 Label
+    MoveScaled(29,20,24,3)
+    Text = ("Magnesium Fill Time")
+    Alignment = Align.Right
+  }
+  { Label6 Label
+    MoveScaled(64,20,24,3)
+    Text = ("seconds")
+  }
+  { SpinBox3 SpinBox
+    MoveScaled(54,20,9,3)
+    MinValue = 1
+    MaxValue = 10000
+  }
+  { Label7 Label
+    MoveScaled(29,25,24,3)
+    Text = ("Kaoline Fill Time")
+    Alignment = Align.Right
+  }
+  { Label8 Label
+    MoveScaled(64,25,24,3)
+    Text = ("seconds")
+  }
+  { SpinBox4 SpinBox
+    MoveScaled(54,25,9,3)
+    MinValue = 1
+    MaxValue = 10000
+  }
+  { Label9 Label
+    MoveScaled(29,30,24,3)
+    Text = ("Sample Time")
+    Alignment = Align.Right
+  }
+  { Label10 Label
+    MoveScaled(64,30,24,3)
+    Text = ("seconds")
+  }
+  { SpinBox5 SpinBox
+    MoveScaled(54,30,9,3)
+    MinValue = 1
+    MaxValue = 10000
+  }
+  { Label11 Label
+    MoveScaled(29,35,24,3)
+    Text = ("Bowl Start Delay")
+    Alignment = Align.Right
+  }
+  { Label12 Label
+    MoveScaled(64,35,24,3)
+    Text = ("seconds")
+  }
+  { SpinBox6 SpinBox
+    MoveScaled(54,35,9,3)
+    MinValue = 1
+    MaxValue = 10000
+  }
+  { Label13 Label
+    MoveScaled(29,40,24,3)
+    Text = ("Bowl Speedup Time")
+    Alignment = Align.Right
+  }
+  { Label14 Label
+    MoveScaled(64,40,24,3)
+    Text = ("seconds")
+  }
+  { SpinBox7 SpinBox
+    MoveScaled(54,40,9,3)
+    MinValue = 1
+    MaxValue = 10000
+  }
+  { Label15 Label
+    MoveScaled(29,45,24,3)
+    Text = ("Bowl Water Fill Time")
+    Alignment = Align.Right
+  }
+  { Label16 Label
+    MoveScaled(64,45,24,3)
+    Text = ("seconds")
+  }
+  { SpinBox8 SpinBox
+    MoveScaled(54,45,9,3)
+    MinValue = 1
+    MaxValue = 10000
+  }
+  { Label17 Label
+    MoveScaled(29,50,24,3)
+    Text = ("Kaoline Valve Clean Time")
+    Alignment = Align.Right
+  }
+  { Label18 Label
+    MoveScaled(64,50,24,3)
+    Text = ("seconds")
+  }
+  { SpinBox9 SpinBox
+    MoveScaled(54,50,9,3)
+    MinValue = 1
+    MaxValue = 10000
+  }
+  { Label19 Label
+    MoveScaled(29,55,24,3)
+    Text = ("Centrifuge Time")
+    Alignment = Align.Right
+  }
+  { Label20 Label
+    MoveScaled(64,55,24,3)
+    Text = ("seconds")
+  }
+  { SpinBox10 SpinBox
+    MoveScaled(54,55,9,3)
+    MinValue = 1
+    MaxValue = 10000
+  }
+  { Label21 Label
+    MoveScaled(8,60,45,3)
+    Text = ("Output Container Capture Time")
+    Alignment = Align.Right
+  }
+  { Label22 Label
+    MoveScaled(64,60,24,3)
+    Text = ("seconds")
+  }
+  { SpinBox11 SpinBox
+    MoveScaled(54,60,9,3)
+    MinValue = 1
+    MaxValue = 10000
+  }
+  { Label23 Label
+    MoveScaled(29,65,24,3)
+    Text = ("Bowl Clean Time")
+    Alignment = Align.Right
+  }
+  { Label24 Label
+    MoveScaled(64,65,24,3)
+    Text = ("seconds")
+  }
+  { SpinBox12 SpinBox
+    MoveScaled(54,65,9,3)
+    MinValue = 1
+    MaxValue = 10000
+  }
+}

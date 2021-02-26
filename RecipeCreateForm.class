@@ -1,0 +1,72 @@
+' Gambas class file
+
+
+
+PUBLIC SUB Form_Close()
+  RecipeCreateForm.Visible = FALSE
+  MainAZC.Visible = TRUE
+END
+
+
+PUBLIC SUB CreateFormExit_Click()
+  RecipeCreateForm.Visible = FALSE
+  MainAZC.Visible = TRUE
+END
+
+
+PUBLIC SUB CreateFormLoad_Click()
+  Dialog.Path = MainAZC.Var_Array[5, 0]                 ' set path to directory specified in AZC.ini, line 5.
+  Dialog.Filter = ["*.rcp", "Recipe Files"]             ' open dialog and display the *.rcp files.
+  IF Dialog.OpenFile() THEN RETURN                      ' if cancelled, then stop with this event.
+  MainAZC.Read_File(Dialog.Path, MainAZC.Var_Recipe)    ' read file and load the parameters into the array
+  Refresh_Create()                                      ' load spinboxes with new values.
+  RecipeCreateForm.text = Dialog.Path                   ' modify the header of the screen, so the user can see which file is used.
+  CATCH
+    Message.Info(Error.Text)
+END
+
+PUBLIC SUB Refresh_Create()
+  SpinBox1.Value = Val(MainAZC.Var_Array[1, 1])
+  SpinBox2.Value = Val(MainAZC.Var_Array[2, 1])
+  SpinBox3.Value = Val(MainAZC.Var_Array[3, 1])
+  SpinBox4.Value = Val(MainAZC.Var_Array[4, 1])
+  SpinBox5.Value = Val(MainAZC.Var_Array[5, 1])
+  SpinBox6.Value = Val(MainAZC.Var_Array[6, 1])
+  SpinBox7.Value = Val(MainAZC.Var_Array[7, 1])
+  SpinBox8.Value = Val(MainAZC.Var_Array[8, 1])
+  SpinBox9.Value = Val(MainAZC.Var_Array[9, 1])
+  SpinBox10.Value = Val(MainAZC.Var_Array[10, 1])
+  SpinBox11.Value = Val(MainAZC.Var_Array[11, 1])
+  SpinBox12.Value = Val(MainAZC.Var_Array[12, 1])
+END
+
+PUBLIC SUB CreateFormSave_Click()
+  DIM StringToStore AS String
+  StringToStore = PrepareSave()
+  Dialog.Path = MainAZC.Var_Array[5, 0]
+  Dialog.Filter = ["*.rcp", "Recipe Files"]
+  IF Dialog.SaveFile() THEN RETURN
+  File.Save(Dialog.Path, StringToStore)
+  RecipeCreateForm.text = Dialog.Path                   ' modify the header of the screen, so the user can see which file is used.
+
+CATCH
+  Message.Info(Error.Text)
+END
+
+PUBLIC SUB PrepareSave() AS String
+  DIM Result AS String
+  Result = SpinBox1.Value & "\n" &
+            SpinBox2.Value & "\n" &
+            SpinBox3.Value & "\n" &
+            SpinBox4.Value & "\n" &
+            SpinBox5.Value & "\n" &
+            SpinBox6.Value & "\n" &
+            SpinBox7.Value & "\n" &
+            SpinBox8.Value & "\n" &
+            SpinBox9.Value & "\n" &
+            SpinBox10.Value & "\n" &
+            SpinBox11.Value & "\n" &
+            SpinBox12.Value & "\n"
+  RETURN Result                     
+END
+

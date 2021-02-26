@@ -1,0 +1,443 @@
+' Gambas class file
+PUBLIC Input_Container AS Boolean = TRUE    ' debug to avoid placing containers everytime
+PUBLIC Stir_Ready AS Boolean
+PUBLIC Bowl_On_Speed AS Boolean
+PUBLIC Magn_Done AS Boolean
+PUBLIC Water_Done AS Boolean
+PUBLIC Sample_Done AS Boolean
+PUBLIC Kaoline_Done AS Boolean
+PUBLIC Centrifuge_Done AS Boolean
+PUBLIC Capture_Done AS Boolean
+PUBLIC Output_Container AS Boolean = TRUE   ' debug to avoid placing containers everytime
+PUBLIC Process_Count AS Integer
+'PUBLIC timeclean AS Integer = 4
+PUBLIC Bowl_Stopped AS Boolean
+PUBLIC Startup_clean AS Boolean = TRUE
+PUBLIC Bowl_Delay AS Integer
+PUBLIC Bowl_May_Go AS Boolean
+PUBLIC Bowl_Running AS Boolean
+
+
+PUBLIC SUB Go()
+  Stir_Ready = FALSE
+  Bowl_On_Speed = FALSE
+  Bowl_Stopped = TRUE
+  Bowl_Running = FALSE
+  Magn_Done = FALSE
+  Water_Done = FALSE
+  Sample_Done = FALSE
+  Kaoline_Done = FALSE
+  Centrifuge_Done = FALSE
+  Capture_Done = FALSE 
+  Process_Count = 0
+  MainAZC.Fill_Time_Table() ' loads all timer settings in variables.
+  PRINT "let's look for clean at power-on: " & MainAZC.Clean_Every_Startup_Flag
+  IF MainAZC.Stirrer_Dirty = TRUE THEN 
+    PRINT "hela, stirrer is dirty" 
+    MainAZC.StatusText("Cleaning Stirrer before use...")
+    SerialHandler.TxRxFast(on.lamp_red)
+    CleanMachine.Stir_Clean_Setup = FALSE
+    CleanMachine.Stir(TimeTable.Stirrer_Clean_Time)
+    MainAZC.update_leds()
+    IF MainAZC.Bowl_Dirty = FALSE THEN 
+      CleanMachine.All(TRUE)
+    ENDIF 
+  ENDIF 
+  IF MainAZC.StopProcess = 1 THEN GOTO finish
+  IF MainAZC.Bowl_Dirty = TRUE THEN 
+    PRINT "hela, bowl is dirty" 
+    MainAZC.StatusText("Cleaning Bowl before use...")
+    SerialHandler.TxRxFast(on.lamp_red)
+    Bowl_Stopped = TRUE
+    CleanMachine.All(FALSE)
+  ENDIF 
+  
+  MainAZC.update_leds()
+  Startup_clean = FALSE   ' to avoid recleaning every hit of "play"
+  SerialHandler.TxRxFast(off.lamp_red)
+
+  IF MainAZC.StopProcess = 1 THEN GOTO finish
+  Bowl_Delay = TimeTable.Stir_Time - TimeTable.Motor_ACC
+  IF Bowl_Delay < 1000 THEN 
+    Bowl_Delay = 5  ' 5 ms
+  ELSE 
+    Bowl_Delay += 100
+  ENDIF 
+
+  
+  DO
+    MainAZC.CTRL_Progress_Timer(TRUE) ' start progress bar)
+    MainAZC.StatusText("Running...")
+    IF Fill_Input() THEN
+      Message.Error("Water fill timeout. Check main water pressure.", "Stop")
+      WAIT 1    
+     GOTO finish
+    ENDIF 
+    IF MainAZC.StopProcess = 1 THEN GOTO finish
+    Rotate_Input()
+    IF MainAZC.StopProcess = 1 THEN GOTO finish
+    Start_Stir()
+    MainAZC.Stirrer_Dirty = TRUE
+    MainAZC.update_leds()
+    Bowl_May_Go = FALSE
+    IF MainAZC.StopProcess = 1 THEN GOTO finish
+    Start_Bowl()
+    IF MainAZC.StopProcess = 1 THEN GOTO finish
+    Wait_For_Stir()
+    IF MainAZC.StopProcess = 1 THEN GOTO finish
+    Stir_Slow()
+    IF MainAZC.StopProcess = 1 THEN GOTO finish
+    Wait_For_Bowl_Speedup()
+    IF MainAZC.StopProcess = 1 THEN GOTO finish
+    MainAZC.Bowl_Dirty = TRUE
+    MainAZC.update_leds()
+    IF MainAZC.StopProcess = 1 THEN GOTO finish
+    Fill_Bowl()
+    IF MainAZC.StopProcess = 1 THEN GOTO finish
+    Stop_Stir()             ' stop stirrer, move to clean and starts cleaning.
+    IF MainAZC.StopProcess = 1 THEN GOTO finish
+    Wait_For_Centrifuge()   ' also checks for stir clean stop
+    IF MainAZC.StopProcess = 1 THEN GOTO finish
+    Move_Output("capture")
+    IF MainAZC.StopProcess = 1 THEN GOTO finish
+    Stop_Bowl()
+    IF MainAZC.StopProcess = 1 THEN GOTO finish
+    Wait_For_Capture()      ' also checks for stir clean stop
+    IF MainAZC.StopProcess = 1 THEN GOTO finish
+    Move_Output("rest")
+    IF MainAZC.StopProcess = 1 THEN GOTO finish
+    Rotate_Output()
+    IF MainAZC.StopProcess = 1 THEN GOTO finish
+    INC Process_Count
+    MainAZC.Increment_Counter(Process_Count)
+    MainAZC.Time_Correction = DateDiff(MainAZC.starttime, Now(), gb.Second)
+    MainAZC.StatusText("Cleaning...")
+    CleanMachine.All(FALSE)
+    IF MainAZC.StopProcess = 1 THEN GOTO finish
+    MainAZC.CTRL_Progress_Timer(FALSE)  ' stop progress bar
+    MainAZC.overalltime = MainAZC.Time_Correction
+    PRINT "corrected = " & MainAZC.overalltime
+    
+    
+'  LOOP UNTIL (Input_Container = FALSE) OR (Output_Container = FALSE) OR (Process_Count = 8)
+  LOOP UNTIL (Input_Container = FALSE) OR (Output_Container = FALSE) OR (Process_Count = Val(MainAZC.Var_Array[MainAZC.Max_Input_Containers, MainAZC.Var_Ini])) 'china
+finish:
+  RETURN
+END
+
+
+PUBLIC SUB Fill_Input() AS Integer ' TODO: to be expanded with timeout capture and action. Now it can be an infinite loop in case of a defect somewere.
+  DIM returncode AS Integer
+  returncode = 1
+  PRINT "fill1" & Check.Fill_Status()
+  PRINT SerialHandler.TxRxFast(on.water_valve_fill) ' = "fill"
+  PRINT "fill2" & Check.Fill_Status()
+  WAIT 0.5
+  MainAZC.StatusText("Applying water to input container...")
+  DO
+    WAIT 1
+    IF MainAZC.StopProcess = 1 THEN GOTO finish
+    PRINT "fillx" & Check.Fill_Status()
+    IF (Check.Fill_Status() = "timeout") THEN 
+      PRINT "water fill timeout."
+      GOTO finish
+    ENDIF 
+  LOOP UNTIL Check.Fill_Status() = "done" 
+  returncode = 0
+finish:
+  SerialHandler.TxRxFast(off.water_valve_fill) ' just for safety
+  MainAZC.StatusText("Water fill done.")
+  WAIT 2  ' allow last drops to fall.
+  RETURN returncode
+END
+
+PUBLIC SUB Rotate_Input()  
+  Input_Container = FALSE
+  Search.Next_Input()
+  IF Check.Input_Container_Fill() = "present" THEN Input_Container = TRUE
+END
+
+PUBLIC SUB Start_Stir()  
+  DO
+    WAIT 0.1
+  LOOP UNTIL MainAZC.Stirrer_Dirty = FALSE
+  MainAZC.StatusText("Move stirrer and start it...")
+  TimerStir.Delay = TimeTable.Stir_Time '3000  'debug
+  StirProcess.MoveStir("stir")
+  'SerialHandler.TxRxFast(on.stirrer)
+  'china: use serial control for stirrer:
+  Stirrer.SetRpm(Val(MainAZC.Var_Array[MainAZC.Stirrer_High_Speed, MainAZC.Var_Ini]))    '
+  'SerialHandler.TxRxFast(on.stirrer_max)
+  Stir_Ready = FALSE
+  TimerStir.Enabled = TRUE
+END
+
+PUBLIC SUB Start_Bowl()
+  TimerBowlStartDelay.Delay = Bowl_Delay
+  TimerBowlStartDelay.Enabled = TRUE
+  DO
+    WAIT 0.1
+    IF MainAZC.StopProcess = 1 THEN GOTO finish
+  LOOP UNTIL Bowl_May_Go = TRUE
+  MainAZC.StatusText("Start up bowl...")
+  
+ 
+  TimerBowlSpeedup.Delay = TimeTable.Motor_ACC ' 10000
+  SerialHandler.TxRxFast(on.freq_1)
+  SerialHandler.TxRxFast(on.freq_2)
+  Bowl_Running = TRUE
+  Bowl_On_Speed = FALSE
+  TimerBowlSpeedup.Enabled = TRUE
+finish:
+END
+
+PUBLIC SUB Wait_For_Stir()  
+  DO
+    WAIT 0.1
+    IF MainAZC.StopProcess = 1 THEN GOTO finish
+  LOOP UNTIL Stir_Ready = TRUE
+finish:
+END
+
+PUBLIC SUB Stir_Slow()  
+  'china: use serial control for stirrer:
+  Stirrer.SetRpm(Val(MainAZC.Var_Array[MainAZC.Stirrer_Low_Speed, MainAZC.Var_Ini]))    '
+  'SerialHandler.TxRxFast(off.stirrer_max)
+  WAIT 2  ' debug
+END
+
+PUBLIC SUB Wait_For_Bowl_Speedup()  
+  DO
+    WAIT 0.1
+    IF MainAZC.StopProcess = 1 THEN GOTO finish
+  LOOP UNTIL Bowl_On_Speed = TRUE
+finish:
+END
+
+PUBLIC SUB Fill_Bowl()  
+  ' fill magn (no pump required)
+  MainAZC.StatusText("Fill bowl...")
+  Magn_Done = FALSE
+  SerialHandler.TxRxFast(on.magnesium_valve)
+  WAIT 0.5  'china
+  SerialHandler.TxRxFast(on.pump_magnesium)  'china
+  TimerMagn.Delay = TimeTable.Magnesium_Fill_Time ' 3000  ' debug
+  TimerMagn.Enabled = TRUE
+  DO
+    WAIT 0.1
+    IF MainAZC.StopProcess = 1 THEN GOTO finish
+  LOOP UNTIL Magn_Done = TRUE
+  SerialHandler.TxRxFast(off.pump_magnesium)  'china
+  WAIT 0.5  'china
+  SerialHandler.TxRxFast(off.magnesium_valve)
+  WAIT 0.5
+  ' fill water (pump required)
+  Water_Done = FALSE
+  SerialHandler.TxRxFast(on.water_valve_tube)
+  SerialHandler.TxRxFast(on.pump_tube)
+  TimerWater.delay = TimeTable.Bowl_Water_Fill_Time '5000  ' debug
+  TimerWater.Enabled = TRUE
+  DO
+    WAIT 0.1
+    IF MainAZC.StopProcess = 1 THEN GOTO finish
+  LOOP UNTIL Water_Done = TRUE
+  SerialHandler.TxRxFast(off.water_valve_tube) 
+  SerialHandler.TxRxFast(off.pump_tube)
+  WAIT 1
+  ' fill sample
+  Sample_Done = FALSE
+  SerialHandler.TxRxFast(on.sample_valve)
+  SerialHandler.TxRxFast(on.pump_tube)
+  TimerSample.Delay = TimeTable.Sample_Time '10000 ' debug
+  TimerSample.Enabled = TRUE
+  DO
+    WAIT 0.1
+    IF MainAZC.StopProcess = 1 THEN GOTO finish
+  LOOP UNTIL Sample_Done = TRUE
+  SerialHandler.TxRxFast(off.sample_valve) 
+  SerialHandler.TxRxFast(off.pump_tube)
+  WAIT 1
+  ' fill kaoline
+  Kaoline_Done = FALSE
+  SerialHandler.TxRxFast(on.kaoline_valve)
+  SerialHandler.TxRxFast(on.pump_tube)
+  TimerKaoline.Delay = TimeTable.Kaoline_Fill_Time '10000 ' debug
+  Timerkaoline.Enabled = TRUE
+  DO
+    WAIT 0.1
+    IF MainAZC.StopProcess = 1 THEN GOTO finish
+  LOOP UNTIL Kaoline_Done = TRUE
+  SerialHandler.TxRxFast(off.kaoline_valve) 
+'extra: clean tube with water. 230913:
+  SerialHandler.TxRxFast(on.water_valve_tube) 
+  WAIT 5
+finish:
+  SerialHandler.TxRxFast(off.water_valve_tube) 
+  SerialHandler.TxRxFast(off.kaoline_valve) 
+  SerialHandler.TxRxFast(off.pump_tube)
+  WAIT 1
+END
+
+PUBLIC SUB Stop_Stir()
+  'china: use serial control for stirrer:
+  MainAZC.StatusText("Stop stirrer and move to clean centre...")
+  Stirrer.SetRpm(0)    '
+  'SerialHandler.TxRxFast(off.stirrer)
+  StirProcess.MoveStir("clean")
+  CleanMachine.Stir(TimeTable.Stirrer_Clean_Time)
+  MainAZC.update_leds()
+END
+
+PUBLIC SUB Wait_For_Centrifuge()  
+  ' load timer
+  Centrifuge_Done = FALSE
+  TimerCentrifuge.Delay = TimeTable.Centrifuge_Time ' 4000  ' debug
+  TimerCentrifuge.Enabled = TRUE
+  ' wait until expired
+  DO
+    WAIT 0.1
+    IF MainAZC.StopProcess = 1 THEN GOTO finish
+    CleanMachine.stir_stop_check()
+  LOOP UNTIL Centrifuge_Done = TRUE
+finish:
+END
+
+PUBLIC SUB Move_Output(position AS String)  
+  IF position = "capture" THEN 
+    MainAZC.StatusText("Move output store to capture position...")
+    'china: move drain away:
+    SerialHandler.TxRxFast(on.drain_bowl)          'china
+    DO
+      WAIT 0.1
+    LOOP UNTIL Check.Drain_Bowl_Position() = "on"  'china
+
+    SerialHandler.TxRxFast(on.output_store_move)
+    DO
+      WAIT 0.1
+    LOOP UNTIL Check.Output_Store_Move() = "on"
+  ELSE IF position = "rest" THEN 
+    MainAZC.StatusText("Move output store away...")
+    SerialHandler.TxRxFast(off.output_store_move)
+    DO
+      WAIT 0.1
+    LOOP UNTIL Check.Output_Store_Move() = "off"
+
+    'china: move drain back under bowl:
+    SerialHandler.TxRxFast(off.drain_bowl)           'china
+    DO
+      WAIT 0.1
+    LOOP UNTIL Check.Drain_Bowl_Position() = "off"  'china
+
+  ENDIF 
+  WAIT 1  ' psyco wait.
+END
+
+PUBLIC SUB Stop_Bowl()  
+  MainAZC.StatusText("Stop bowl...")
+  SerialHandler.TxRxFast(off.freq_1)
+  SerialHandler.TxRxFast(off.freq_2)
+  Bowl_Stopped = FALSE
+  TimerBowlSlowDown.delay = TimeTable.Motor_DEC ' 20000 ' debug. time is equal to "DEC" parameter in freq inverters.
+  TimerBowlSlowDown.Enabled = TRUE
+END
+
+PUBLIC SUB Wait_For_Capture()  
+  Capture_Done = FALSE
+  TimerCapture.Delay = TimeTable.Output_Capture_Time ' 10000
+  TimerCapture.Enabled = TRUE
+  MainAZC.StatusText("capturing result...")
+  DO
+    WAIT 0.1
+    CleanMachine.stir_stop_check()
+  LOOP UNTIL Capture_Done = TRUE
+  MainAZC.StatusText("capturing result done.")
+END
+
+PUBLIC SUB Rotate_Output()  
+  Output_Container = FALSE
+  Search.Next_Output()
+  IF Check.Output_Container() = "present" THEN Output_Container = TRUE
+END
+
+PUBLIC SUB Stop_All()
+  PRINT " knock all down"
+  SerialHandler.TxRx(on.lamp_red)
+  SerialHandler.TxRx(off.lamp_green)
+  SerialHandler.TxRx(off.lamp_orange)
+  SyncMachine.Controls_To_Default()
+  
+  IF Bowl_Running = TRUE
+    TimerBowlSlowDown.Enabled = FALSE
+    TimerBowlSlowDown.delay = TimeTable.Motor_DEC 'time is equal to "DEC" parameter in freq inverters.
+    TimerBowlSlowDown.Enabled = TRUE
+    Bowl_Stopped = FALSE
+  ENDIF 
+  DO
+     WAIT 0.1
+  LOOP UNTIL Bowl_Stopped = TRUE
+END 
+
+PUBLIC SUB TimerStir_Timer()
+  TimerStir.Enabled = FALSE
+  Stir_Ready = TRUE
+END
+
+PUBLIC SUB TimerBowlSpeedup_Timer()
+  TimerBowlSpeedup.Enabled = FALSE
+  Bowl_On_Speed = TRUE
+END
+
+PUBLIC SUB TimerMagn_Timer()
+  TimerMagn.Enabled = FALSE
+  Magn_Done = TRUE
+END
+
+PUBLIC SUB TimerWater_Timer()
+  TimerWater.Enabled = FALSE
+  Water_Done = TRUE
+END
+
+PUBLIC SUB TimerSample_Timer()
+  TimerSample.Enabled = FALSE
+  Sample_Done = TRUE
+END
+
+PUBLIC SUB TimerKaoline_Timer()
+  TimerKaoline.Enabled = FALSE
+  Kaoline_Done = TRUE
+END
+
+PUBLIC SUB TimerCentrifuge_Timer()
+  TimerCentrifuge.Enabled = FALSE
+  Centrifuge_Done = TRUE
+END
+
+PUBLIC SUB TimerCapture_Timer()
+  TimerCapture.Enabled = FALSE
+  Capture_Done = TRUE
+END
+
+PUBLIC SUB TimerBowlSlowDown_Timer()
+  TimerBowlSlowDown.Enabled = FALSE
+  Bowl_Stopped = TRUE
+  Bowl_Running = FALSE
+END
+
+PUBLIC SUB TimerBowlStartDelay_Timer()
+  TimerBowlStartDelay.Enabled = FALSE
+  Bowl_May_Go = TRUE
+END
+
+PUBLIC SUB STOP_TIMERS()
+  TimerBowlSlowDown.Enabled = FALSE
+  TimerBowlSpeedup.Enabled = FALSE
+  TimerBowlStartDelay.Enabled = FALSE
+  TimerCapture.Enabled = FALSE
+  TimerCentrifuge.Enabled = FALSE
+  TimerKaoline.Enabled = FALSE
+  TimerMagn.Enabled = FALSE
+  TimerSample.Enabled = FALSE
+  TimerStir.Enabled = FALSE
+  TimerWater.Enabled = FALSE
+END
+

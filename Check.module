@@ -1,0 +1,279 @@
+' Gambas module file
+PUBLIC SUB Drain_Bowl_Position() AS String  'A0+A1
+  DIM Reply AS String
+  DIM IN_A AS Integer
+  Reply = SerialHandler.TxRxFast("inA?")
+  IF Reply = "ERR98" THEN Reply = "999"
+  IN_A = Val(Reply)
+  IN_A = IN_A AND 3
+  IF (IN_A = 1) THEN 
+    Reply = "off"
+  ELSE IF (IN_A = 2) THEN 
+    Reply = "on"
+  ELSE 
+    Reply = "ERR"
+  ENDIF 
+  RETURN Reply
+END
+
+PUBLIC SUB Output_Store_Rotate() AS String  'A2+A3
+  DIM Reply AS String
+  DIM IN_A AS Integer
+  Reply = SerialHandler.TxRxFast("inA?")
+  IF Reply = "ERR98" THEN Reply = "999"
+  IN_A = Val(Reply)
+  IN_A = IN_A AND 12
+  IF (IN_A = 4) THEN 
+    Reply = "off"
+  ELSE IF (IN_A = 8) THEN 
+    Reply = "on"
+  ELSE 
+    Reply = "ERR"
+  ENDIF 
+  RETURN Reply
+END
+
+PUBLIC SUB Output_Store_Move() AS String  'A4+A5
+  DIM Reply AS String
+  DIM IN_A AS Integer
+  Reply = SerialHandler.TxRxFast("inA?")
+  IF Reply = "ERR98" THEN Reply = "999"
+  IN_A = Val(Reply)
+  IN_A = IN_A AND &h30&
+  IF (IN_A = 16) THEN 
+    Reply = "off"
+  ELSE IF (IN_A = 32) THEN 
+    Reply = "on"
+  ELSE 
+    Reply = "ERR"
+  ENDIF 
+  RETURN Reply
+END
+
+PUBLIC SUB Output_Container() AS String   'A6
+  DIM Reply AS String
+  DIM IN_A AS Integer
+  Reply = SerialHandler.TxRxFast("inA?")
+  IF Reply = "ERR98" THEN Reply = "999"
+  IN_A = Val(Reply)
+  IN_A = IN_A AND &h40&
+  IF (IN_A = 64) THEN 
+    Reply = "present"
+  ELSE IF (IN_A = 0) THEN
+    Reply = "missing"
+  ELSE 
+    Reply = "ERR"
+  ENDIF 
+  RETURN Reply
+END
+
+PUBLIC SUB Input_A7_Status() AS String   'A7 = free
+  DIM Reply AS String
+  DIM IN_A AS Integer
+  Reply = SerialHandler.TxRxFast("inA?")
+  IF Reply = "ERR98" THEN Reply = "999"
+  IN_A = Val(Reply)
+  IN_A = IN_A AND &h80&
+  IF (IN_A = 128) THEN 
+    Reply = "present"
+  ELSE IF (IN_A = 0) THEN
+    Reply = "missing"
+  ELSE 
+    Reply = "ERR"
+  ENDIF 
+  RETURN Reply
+END
+
+
+PUBLIC SUB Stirrer_Rotate() AS String 'B0+B1
+  DIM Reply AS String
+  DIM IN_B AS Integer
+  Reply = SerialHandler.TxRxFast("inB?")
+  IF Reply = "ERR98" THEN Reply = "999"
+  IN_B = Val(Reply)
+  IN_B = IN_B AND &h03&
+  IF (IN_B = 1) THEN 
+    Reply = "clean"
+  ELSE IF (IN_B = 2) THEN 
+    Reply = "stir"
+  ELSE 
+    Reply = "ERR"
+  ENDIF 
+  RETURN Reply
+END
+
+PUBLIC SUB Stirrer_Lift() AS String 'B2+B3
+  DIM Reply AS String
+  DIM IN_B AS Integer
+  Reply = SerialHandler.TxRxFast("inB?")
+  IF Reply = "ERR98" THEN Reply = "999"
+  IN_B = Val(Reply)
+  IN_B = IN_B AND &h0C&
+  IF (IN_B = 4) THEN 
+    Reply = "up"
+  ELSE IF (IN_B = 8) THEN 
+    Reply = "down"
+  ELSE 
+    Reply = "ERR"
+  ENDIF 
+  RETURN Reply
+END
+
+PUBLIC SUB Input_Container_Fill() AS String 'B4
+  DIM Reply AS String
+  DIM IN_B AS Integer
+  Reply = SerialHandler.TxRxFast("inB?")
+  IF Reply = "ERR98" THEN Reply = "999"
+  IN_B = Val(Reply)
+  IN_B = IN_B AND &h10&
+  IF (IN_B = 16) THEN 
+    Reply = "present"
+  ELSE IF (IN_B = 0) THEN 
+    Reply = "missing"
+  ELSE 
+    Reply = "ERR"
+  ENDIF 
+  RETURN Reply
+END
+
+
+PUBLIC SUB Input_Container_Stir() AS String 'B5
+  DIM Reply AS String
+  DIM IN_B AS Integer
+  Reply = SerialHandler.TxRxFast("inB?")
+  IF Reply = "ERR98" THEN Reply = "999"
+  IN_B = Val(Reply)
+  IN_B = IN_B AND &h20&
+  IF (IN_B = 32) THEN 
+    Reply = "present"
+  ELSE IF (IN_B = 0) THEN 
+    Reply = "missing"
+  ELSE 
+    Reply = "ERR"
+  ENDIF 
+  RETURN Reply
+END
+
+PUBLIC SUB Input_Store_Position() AS String 'B6
+  DIM Reply AS String
+  DIM IN_B AS Integer
+  Reply = SerialHandler.TxRxFast("inB?")
+  PRINT Reply
+  IF Reply = "ERR98" THEN Reply = "999"
+  IN_B = Val(Reply)
+  IN_B = IN_B AND &h40&
+  IF (IN_B = 64) THEN 
+    Reply = "on"
+  ELSE IF (IN_B = 0) THEN 
+    Reply = "off"
+  ELSE 
+    Reply = "ERR"
+  ENDIF 
+  RETURN Reply
+END
+
+PUBLIC SUB Input_Store_Rotate_Done() AS String 'input store rotate action completed?
+  DIM Reply AS String
+  DIM rotate AS Integer
+  Reply = SerialHandler.TxRxFast("rotatedone?")
+  rotate = Val(Reply)
+  IF (rotate = 1) THEN 
+    Reply = "done"
+  ELSE IF (rotate = 0) THEN 
+    Reply = "busy"
+  ELSE IF (rotate = -1) THEN 
+      Reply = "timeout"
+  ELSE 
+      Reply = "err"
+  ENDIF 
+  RETURN Reply
+END
+
+PUBLIC SUB Input_B7_Status() AS String 'B7 = free
+  DIM Reply AS String
+  DIM IN_B AS Integer
+  Reply = SerialHandler.TxRxFast("inB?")
+  IF Reply = "ERR98" THEN Reply = "999"
+  IN_B = Val(Reply)
+  IN_B = IN_B AND &h80&
+  IF (IN_B = 128) THEN 
+    Reply = "on"
+  ELSE IF (IN_B = 0) THEN 
+    Reply = "off"
+  ELSE 
+    Reply = "ERR"
+  ENDIF 
+  RETURN Reply
+END
+
+PUBLIC SUB Fill_Status() AS String  'C1
+  DIM Reply AS String
+  DIM Fill AS Integer
+  Reply = SerialHandler.TxRxFast("full?")
+  Fill = Val(Reply)
+  IF (Fill = 1) THEN 
+    Reply = "done"
+  ELSE IF (Fill = 0) THEN 
+    Reply = "busy"
+  ELSE IF (Fill = -1) THEN 
+      Reply = "timeout"
+  ELSE IF (Fill = -2) THEN 
+      Reply = "stopped"
+  ELSE 
+      Reply = "err"
+  ENDIF 
+  RETURN Reply
+ 
+  
+  
+END
+
+
+' extra 1
+PUBLIC SUB Water_Level() AS String  'C1
+  DIM Reply AS String
+  DIM IN_C AS Integer
+  Reply = SerialHandler.TxRxFast("inC1?")
+  IF Reply = "ERR98" THEN Reply = "999"
+  IN_C = Val(Reply)
+  IF (IN_C = 1) THEN 
+    Reply = "true"
+  ELSE IF (IN_C = 0) THEN 
+    Reply = "false"
+  ELSE 
+    Reply = "ERR"
+  ENDIF 
+  RETURN Reply
+END
+' extra 2
+PUBLIC SUB Kaoline_Level() AS String  'C2
+  DIM Reply AS String
+  DIM IN_C AS Integer
+  Reply = SerialHandler.TxRxFast("inC2?")
+  IF Reply = "ERR98" THEN Reply = "999"
+  IN_C = Val(Reply)
+  IF (IN_C = 1) THEN 
+    Reply = "true"
+  ELSE IF (IN_C = 0) THEN 
+    Reply = "false"
+  ELSE 
+    Reply = "ERR"
+  ENDIF 
+  RETURN Reply
+END
+' extra 3
+PUBLIC SUB Magnesium_Level() AS String  'C3
+  DIM Reply AS String
+  DIM IN_C AS Integer
+  Reply = SerialHandler.TxRxFast("inC3?")
+  IF Reply = "ERR98" THEN Reply = "999"
+  IN_C = Val(Reply)
+  IF (IN_C = 1) THEN 
+    Reply = "true"
+  ELSE IF (IN_C = 0) THEN 
+    Reply = "false"
+  ELSE 
+    Reply = "ERR"
+  ENDIF 
+  RETURN Reply
+END

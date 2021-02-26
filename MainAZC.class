@@ -1,0 +1,744 @@
+' Gambas class file
+'PUBLIC LevelBit AS Boolean
+PUBLIC Protect AS Boolean
+PUBLIC starttime AS Date
+PUBLIC overalltime AS Integer
+PUBLIC Time_Correction AS Integer
+PUBLIC NoGo AS Boolean
+
+PUBLIC Proc AS Integer
+PUBLIC FileString AS String
+PUBLIC Max_Proc AS Integer
+PUBLIC ReceivedData AS String
+PUBLIC Bowl_Dirty AS Boolean = TRUE
+PUBLIC Stirrer_Dirty AS Boolean = TRUE
+PUBLIC OperatorChoose AS String = "nop"
+PUBLIC Clean_Every_Startup_Flag AS Boolean
+
+PUBLIC Var_Array AS String[100, 3]
+PUBLIC Var_Ini AS Integer = 0    ' first colomn
+PUBLIC Var_Recipe AS Integer = 1 ' second colomn
+
+
+PUBLIC Max_Input_Containers AS Integer = 1
+PUBLIC Max_Output_Containers AS Integer = 2
+PUBLIC Input_Containers_Fill_Timeout AS Integer = 3
+PUBLIC Default_Recipe AS Integer = 4
+PUBLIC Default_Directory AS Integer = 5
+PUBLIC Kaoline_Clean_Time AS Integer = 6
+PUBLIC Motor_ACC_Time AS Integer = 7    'used to calculate the total process time
+PUBLIC Motor_DEC_Time AS Integer = 8    'used to calculate the total process time
+PUBLIC Tube_Clean_Time AS Integer = 9
+PUBLIC Clean_Every_Startup AS Integer = 10
+PUBLIC Timeout_Water_Fill_Valve AS Integer = 11
+PUBLIC Timeout_Input_Store_Rotate AS Integer = 12 'china
+PUBLIC Stirrer_Low_Speed AS Integer = 13 'china
+PUBLIC Stirrer_High_Speed AS Integer = 14 'china
+PUBLIC CommPortPlc AS Integer = 15 'china
+PUBLIC CommPortStirrer AS Integer = 16 'china
+PUBLIC Auto_Shutdown AS Integer = 17
+
+
+PUBLIC Stir_Time AS Integer = 1
+PUBLIC Magnesium_Fill_Time AS Integer = 2
+PUBLIC Bowl_Water_Fill_Time AS Integer = 3
+PUBLIC Sample_Time AS Integer = 4
+PUBLIC Kaoline_Fill_Time AS Integer = 5
+PUBLIC Centrifuge_Time AS Integer = 6
+PUBLIC Output_Capture_Time AS Integer = 7
+PUBLIC Stirrer_Clean_Time AS Integer = 8
+PUBLIC Bowl_Clean_Phase1_Time AS Integer = 9
+PUBLIC Bowl_Clean_Phase2_Time AS Integer = 10
+PUBLIC Bowl_Clean_Phase3_Time AS Integer = 11
+
+
+PUBLIC cancel AS Integer
+PUBLIC pause AS Integer
+PUBLIC CONFIRM AS Boolean = FALSE
+PUBLIC StopProcess AS Integer = 0     ' controlled by stop button and processctrl.
+PUBLIC DumpI AS Integer = 0
+
+PUBLIC Ini_Path AS String = "~/mediquip/AZC/AZC.ini"
+
+PUBLIC SUB Menu_Home_About_Click()
+  DIM AboutMessage AS String
+  AboutMessage = "Zonale Centrifuge.\nMechanics: De Koning\nControl: MediQuip"
+  Message.info(AboutMessage)
+END
+
+
+PUBLIC SUB Menu_Home_Exit_Click()
+  IF nogo = FALSE THEN SerialHandler.TxRxFast(off.stirrer_rotate)
+  WAIT 1
+   ME.Close  
+END
+
+
+PUBLIC SUB Menu_Home_Shutdown_Click()
+  IF nogo = FALSE THEN SerialHandler.TxRxFast(off.stirrer_rotate)
+  WAIT 1
+'  IF (Var_Array[Auto_Shutdown, Var_Ini] = "1") THEN 
+  StatusBox.Text = "Machine will switch off after you shutdown the computer."
+      PRINT " auto down"
+    SerialHandler.TxRxFast("shutdown")
+    WAIT 2
+ ' ELSE 
+  '  PRINT " don't shutdown"
+ ' ENDIF
+  ME.Close
+END
+
+
+PUBLIC SUB form_Close()
+ ' StatusBox.Text = "shutting down..."
+  StatusBox.Text = "Closing program..."
+  SerialHandler.serial_close()
+  WAIT 0.5
+  Stirrer.SerialCloseStirrer()  'china
+  WAIT 1
+END
+
+
+PUBLIC SUB Form_Open()
+  DIM Start_Recipe AS String
+  NoGo = TRUE
+  Stirrer_Dirty = FALSE ' debug : save time
+  Bowl_Dirty = FALSE  ' debug : save time
+  
+  'LevelBit = FALSE
+  protect = TRUE                ' locks menu items
+  Set_To_Disable()
+
+  ME.Maximized = TRUE
+  'ME.Width = 900
+  'ME.Height = 700
+  
+
+  
+  '
+  ProgressElapsedTimer.Delay = 1000   ' 1 sec interval
+  ProgressElapsedTimer.Enabled = FALSE
+
+  Proc = 0
+  
+  Read_File(Ini_Path, Var_Ini)    ' load ini file   ' temporary stored on the server. Find better location.
+  Start_Recipe = Var_Array[Default_Directory, Var_Ini] & Var_Array[Default_Recipe, Var_Ini]
+  Read_File(Start_Recipe, Var_Recipe)  ' load recipe
+  Use_Recipe()
+  ME.Text = Start_Recipe
+  
+  StartButton.Enabled = FALSE
+
+
+  StopButton.Enabled = FALSE
+
+  StartButton.SetFocus()
+  MainDelay.Delay = 1000       ' lowest working value is 9.
+  MainDelay.Enabled = TRUE  ' arms timer. On expire the leds are drawn.
+  StartButton.Picture = Picture["play.png"]
+  ME.Font.Size = 12
+  'TODO: how to increase the size of the menu items?
+    
+END
+
+
+PUBLIC SUB Init_Machine() AS Boolean
+    ' link to PLC
+    DIM i AS Integer
+    DIM fillcmd AS String
+    Led.Control(Led_MagLevel, "busy")
+    Led.Control(Led_KaolineLevel, "busy")
+    Led.Control(Led_BowlClean, "busy")
+    Led.Control(Led_StirrerClean, "busy")
+    led.Control(Led_SystemError, "busy")
+    
+    ReceivedData = ""
+    DumpI = SerialHandler.open_serial(Var_Array[CommPortPlc, Var_Ini])  '("/dev/ttyS0")
+    IF DumpI = 2 THEN
+      PRINT "plc did not respond"
+      Message.Error("No contact with PLC", "Stop")
+      QUIT 
+    ELSE IF DumpI = 1 THEN
+      PRINT "open ok"
+    ELSE
+      PRINT "not able to open serial port"
+      Message.Error("No contact with PLC", "Stop")
+      QUIT 
+    ENDIF 
+    
+    ' TODO: add error handler: quit if open serial fails.
+'    PRINT " open ok"
+    ReceivedData = SerialHandler.TxRxFast(on.lamp_red)
+    WAIT 0.05
+    PRINT " first tx done"
+    ReceivedData = ReceivedData & SerialHandler.TxRxFast(on.lamp_orange)
+    WAIT 0.05
+    ReceivedData = ReceivedData & SerialHandler.TxRxFast(on.lamp_green)
+    WAIT 0.05
+    
+    'china: TODO: switch stirrer on and init it.
+    ReceivedData = ReceivedData & SerialHandler.TxRxFast(on.stirrer)  'china
+    WAIT 0.05
+    Stirrer.SerialOpenStirrer(Var_Array[CommPortStirrer, Var_Ini])   '("/dev/ttyS4") 'china
+    ReceivedData = ReceivedData & SerialHandler.TxRxFast(off.lamp_red)
+    WAIT 0.05
+    ReceivedData = ReceivedData & SerialHandler.TxRxFast(off.lamp_orange)
+    WAIT 0.05
+    ReceivedData = ReceivedData & SerialHandler.TxRxFast(off.lamp_green)
+    IF ReceivedData = ("ERR00ERR00ERR00ERR00ERR00ERR00ERR00")  ' 7 x ERR0 means 7 x expected reply : PLC ready.
+      StatusBox.Text = "Machine ready"
+      StartButton.Enabled = TRUE
+      led.Control(Led_SystemError, "off")
+    ELSE
+      StatusBox.Text = "no connection with PLC"
+      PRINT "received: " & ReceivedData
+      Led.Control(Led_SystemError, "error")
+      WAIT 3
+      form_Close()
+    ENDIF 
+    nogo = FALSE
+    IF Check.Magnesium_Level() = "true" THEN Led.Control(Led_MagLevel, "on")
+    IF Check.Kaoline_Level() = "true" THEN Led.Control(Led_KaolineLevel, "on")
+    Clean_Every_Startup_Flag = FALSE 
+    IF Var_Array[Clean_Every_Startup, Var_Ini] = 1 THEN Clean_Every_Startup_Flag = TRUE
+    PRINT "clean flag = "
+    IF Clean_Every_Startup_Flag = FALSE THEN 
+      PRINT "false"
+      Stirrer_Dirty = FALSE
+      Bowl_Dirty = FALSE
+      Led.Control(Led_BowlClean, "on")
+      Led.Control(Led_StirrerClean, "on")
+    ENDIF 
+    
+    IF Clean_Every_Startup_Flag = TRUE THEN 
+      PRINT "true"
+      Stirrer_Dirty = TRUE
+      Bowl_Dirty = TRUE
+      Led.Control(Led_BowlClean, "error")
+      Led.Control(Led_StirrerClean, "error")
+    ENDIF 
+    
+    WAIT 0.5
+    ReceivedData = SerialHandler.TxRxFast(on.lamp_green)
+    Set_To_Stop()
+    StatusBox.Text = "Machine ready"
+    WAIT 0.5
+    SerialHandler.TxRxFast(on.water_valve_HP)   ' new since water buffer of HP can be empty at startup
+    fillcmd = on.Water_Fill_TimeOut & (Var_Array[Timeout_Water_Fill_Valve, Var_Ini])
+    ReceivedData = SerialHandler.TxRxFast(fillcmd)
+    WAIT 0.5                        'china
+    fillcmd = on.input_store_next_TimeOut & (Var_Array[Timeout_Input_Store_Rotate, Var_Ini]) 'china
+    ReceivedData = SerialHandler.TxRxFast(fillcmd)  'china
+END
+
+
+PUBLIC SUB Process_Start()
+    DIM i AS Integer
+    StopProcess = 0
+    PRINT "Process start"
+    StatusText("Checking levels..")
+    SerialHandler.TxRxFast(off.lamp_green)
+    SerialHandler.TxRxFast(off.lamp_orange)
+    SerialHandler.TxRxFast(off.lamp_red)
+    ProcessCTRL.Bowl_Stopped = TRUE
+  ' check Mag AND kao levels
+    IF Check.Magnesium_Level() = "true" THEN 
+      Led.Control(Led_MagLevel, "on")
+    ELSE 
+      Led.Control(Led_MagLevel, "error")
+      SerialHandler.TxRxFast(off.lamp_green)
+      SerialHandler.TxRxFast(on.lamp_red)
+      Message.Error("Magnesium Level too low")
+      GOTO Finish
+    ENDIF 
+    IF Check.Kaoline_Level() = "true" THEN 
+      Led.Control(Led_KaolineLevel, "on")
+    ELSE 
+      Led.Control(Led_KaolineLevel, "error")
+      SerialHandler.TxRxFast(off.lamp_green)
+      SerialHandler.TxRxFast(on.lamp_red)
+      Message.Error("Kaoline Level too low")
+      GOTO Finish
+    ENDIF 
+  ' synchronize machine
+    StatusText("Synchronize machine..")
+    i = SyncMachine.Go()
+    SerialHandler.TxRxFast(off.lamp_green)
+    SerialHandler.TxRxFast(off.lamp_orange)
+    SerialHandler.TxRxFast(off.lamp_red)
+    PRINT "end sync: " & i
+    IF (i = 2) THEN GOTO Finish
+
+    SerialHandler.TxRxFast(on.lamp_orange)
+    WAIT 1
+    PRINT "still processing "
+    ' search for input container
+    StatusText("Looking for containers..")
+    IF Search.Input_Container() = "ERR" THEN 
+      SerialHandler.TxRxFast(on.lamp_red)
+      Message.Error("No container at input detected")
+      SerialHandler.TxRxFast(off.lamp_red)
+      SerialHandler.TxRxFast(off.lamp_orange)
+      SerialHandler.TxRxFast(on.lamp_green)
+      GOTO Finish   ' was return
+    ENDIF 
+    IF StopProcess = 1 THEN GOTO finish
+    ProcessCTRL.Input_Container = TRUE
+    ' search for output container
+    IF Search.Output_Container() = "ERR" THEN 
+      SerialHandler.TxRxFast(on.lamp_red)
+      Message.Error("No container at output detected")
+      SerialHandler.TxRxFast(off.lamp_red)
+      SerialHandler.TxRxFast(off.lamp_orange)
+      SerialHandler.TxRxFast(on.lamp_green)
+      GOTO Finish   ' was return
+    ENDIF 
+    IF StopProcess = 1 THEN GOTO finish
+    ProcessCTRL.Output_Container = TRUE
+    
+
+  Processes.Text = 0    ' reset counter
+  Progress.Display(BarArea, 0)
+  ProcessCTRL.Go()
+ 
+Finish:
+  PRINT "finished"
+  ' in case of stop button:
+  IF StopProcess = 1 THEN 
+    Stop_Process()
+  ENDIF 
+  SerialHandler.TxRxFast(off.lamp_orange)
+  SerialHandler.TxRxFast(off.lamp_red)
+  SerialHandler.TxRxFast(on.lamp_green)
+  Set_To_Stop() ' buttons, etc
+  StatusBox.Text = "Ready"
+  RETURN 
+END
+
+PUBLIC SUB Stop_Process()     ' called after a function if "stop" was pressed.
+  CleanMachine.STOP_TIMERS()
+  ProcessCTRL.STOP_TIMERS()
+  ProcessCTRL.Stop_All()
+
+  
+  
+  WAIT 0.5
+  ' display message with consequences
+  Message.Error("Machine could be in an undefined state now.\nPlease check input and output containers.", "Done")
+  MainAZC.StopProcess = 0
+END
+
+PUBLIC SUB Increment_Counter(cnt AS Integer)
+  Processes.Text = cnt
+END
+
+
+'PUBLIC SUB Bowl_Process()
+'   SerialHandler.Transmit(on.lamp_orange)
+'  WAIT 1
+'  SerialHandler.Transmit(on.lamp_green)
+'  WAIT 1
+'END
+
+
+
+PUBLIC SUB Read_File(FileName AS String, StoreColomn AS Integer)
+  DIM dmp1 AS String
+  DIM dmp2 AS Integer
+  DIM pos AS Integer
+  PRINT FileName
+  FileString = File.Load(FileName)
+
+  FOR dmp2 = 1 TO 20 STEP 1
+    pos = InStr(FileString, "\n")
+    dmp1 = Left(FileString, pos - 1)
+    FileString = Right(FileString, - pos)
+    Var_Array[dmp2, StoreColomn] = dmp1
+  NEXT 
+END
+
+PUBLIC SUB StartButton_Click()
+    IF Nogo = TRUE THEN RETURN 
+    OperatorChoose = "start"
+    Set_To_Run()      'set buttons
+    Process_Start()
+END
+
+
+PUBLIC SUB StopButton_Click()
+  Set_To_Disable()          ' disable all buttons
+  StatusBox.text = "Stopping machine...  Please wait..."
+  OperatorChoose = "stop"   ' global indicator
+  StopProcess = 1   ' indicates a request to stop (captured by processCTRL)
+END
+
+
+
+PUBLIC SUB Set_To_Disable()   ' disable all buttons. To Do: disable all menus
+  protect = FALSE
+  Menu_Recipes_Unlock_Click()
+  Menu_Home.Enabled = FALSE
+  Menu_Recipes.Enabled = FALSE
+  Menu_Adv.Enabled = FALSE
+  
+  StartButton.Enabled = FALSE
+  StartButton.ToolTip = ""
+  StopButton.Enabled = FALSE
+  StopButton.ToolTip = ""
+  ProgressElapsedTimer.Enabled = FALSE
+END
+
+
+PUBLIC SUB Set_To_Run()   ' buttons related
+  protect = FALSE
+  Menu_Recipes_Unlock_Click()
+  Menu_Home.Enabled = FALSE
+  Menu_Recipes.Enabled = FALSE
+  Menu_Adv.Enabled = FALSE
+  
+  StartButton.Enabled = FALSE
+  StartButton.ToolTip = ""
+
+
+  StopButton.Enabled = TRUE
+  StopButton.ToolTip = "Clicking aborts whole process. Samples will be lost."
+
+END
+
+
+PUBLIC SUB Set_To_Stop()    ' buttons related
+  protect = FALSE
+  Menu_Recipes_Unlock_Click()
+  Menu_Home.Enabled = TRUE
+  Menu_Recipes.Enabled = TRUE
+  Menu_Adv.Enabled = TRUE
+
+  StartButton.Enabled = TRUE
+  StartButton.ToolTip = "Click to RUN"
+
+  StopButton.Enabled = FALSE
+  StopButton.ToolTip = ""
+  ProgressElapsedTimer.Enabled = FALSE
+  StatusBox.Text = "STOPPED"
+  Progress.Display(BarArea, 0)
+END
+
+
+PUBLIC SUB Menu_Recipes_Unlock_Click()   ' arms timer. On expire the leds are drawn.
+
+  IF Protect = FALSE THEN 
+    SP_StirTime.Enabled = FALSE
+    SP_MagFillTime.Enabled = FALSE
+    SP_BowlWaterFillTime.Enabled = FALSE
+    SP_SampleTime.Enabled = FALSE
+    SP_KaolineFillTime.Enabled = FALSE
+    SP_CentrifugeTime.Enabled = FALSE
+    SP_OutputCaptureTime.Enabled = FALSE
+    SP_StirrerCleanTime.Enabled = FALSE
+    SP_BowlCleanPhase1Time.Enabled = FALSE
+    SP_BowlCleanPhase2Time.Enabled = FALSE
+    SP_BowlCleanPhase3Time.Enabled = FALSE
+    Menu_Recipes_Default.Enabled = FALSE
+    
+    protect = TRUE
+    Menu_Recipes_Unlock.Text = "Unlock"
+  ELSE 
+    SP_StirTime.Enabled = TRUE
+    SP_MagFillTime.Enabled = TRUE
+    SP_BowlWaterFillTime.Enabled = TRUE
+    SP_SampleTime.Enabled = TRUE
+    SP_KaolineFillTime.Enabled = TRUE
+    SP_CentrifugeTime.Enabled = TRUE
+    SP_OutputCaptureTime.Enabled = TRUE
+
+    SP_StirrerCleanTime.Enabled = TRUE
+    SP_BowlCleanPhase1Time.Enabled = TRUE
+    SP_BowlCleanPhase2Time.Enabled = TRUE
+    SP_BowlCleanPhase3Time.Enabled = TRUE
+
+    Menu_Recipes_Default.Enabled = TRUE
+    protect = FALSE
+   
+    Menu_Recipes_Unlock.Text = "Lock"
+  ENDIF 
+END
+
+PUBLIC SUB ProgressElapsedTimer_Timer()
+
+  DIM elapsed AS Integer
+  DIM currenttime AS Date
+  currenttime = Now()
+  elapsed = DateDiff(starttime, currenttime, gb.Second) / overalltime * 100
+  Progress.Display(BarArea, elapsed)
+END
+
+PUBLIC SUB CTRL_Progress_Timer(state AS Boolean)
+  starttime = Now()
+  ProgressElapsedTimer.Enabled = state
+END
+
+
+PUBLIC SUB Menu_Recipes_Load_Click()
+  Dialog.Path = Var_Array[Default_Directory, Var_Ini]
+  Dialog.Filter = ["*.rcp", "Recipe Files"]
+  IF Dialog.OpenFile() THEN RETURN
+  Read_File(Dialog.Path, Var_Recipe)
+  MainAZC.text = Dialog.Path                   ' modify the header of the screen, so the user can see which file is used.
+  protect = FALSE
+  Menu_Recipes_Unlock_Click()
+  Use_Recipe()
+  CATCH
+    Message.Info(Error.Text)
+END
+
+
+PUBLIC SUB Menu_Recipes_Save_Click()
+  DIM StringToStore AS String
+  DIM ext AS String
+  StringToStore = SP_StirTime.Value & "\n" &
+                  SP_MagFillTime.Value & "\n" &
+                  SP_BowlWaterFillTime.Value & "\n" &
+                  SP_SampleTime.Value & "\n" &
+                  SP_KaolineFillTime.Value & "\n" &
+                  SP_CentrifugeTime.Value & "\n" &
+                  SP_OutputCaptureTime.Value & "\n" &
+                  SP_StirrerCleanTime.Value & "\n" &
+                  SP_BowlCleanPhase1Time.Value & "\n" &
+                  SP_BowlCleanPhase2Time.Value & "\n" &
+                  SP_BowlCleanPhase3Time.Value & "\n"
+  
+  Dialog.Path = MainAZC.Var_Array[Default_Directory, Var_Ini]
+  PRINT "path is " & Dialog.Path
+  Dialog.Filter = ["*.rcp", "Recipe Files"]
+  IF Dialog.SaveFile() THEN RETURN
+  PRINT "file name is " & Dialog.Path
+    ext = Right(Dialog.Path, 4)
+  PRINT "ext = " & ext
+  IF ext = ".rcp" THEN 
+    'ext is okay.
+    PRINT "file name is okay"
+  ELSE 
+    'add missing ext:
+    Dialog.Path = Dialog.Path & ".rcp"
+  ENDIF 
+  File.Save(Dialog.Path, StringToStore)
+  MainAZC.text = Dialog.Path                   ' modify the header of the screen, so the user can see which file is used.
+  protect = FALSE
+  Menu_Recipes_Unlock_Click()
+  CATCH
+    Message.Info(Error.Text)
+END
+
+PUBLIC SUB Use_Recipe()
+  SP_StirTime.Value = Val(Var_Array[Stir_Time, Var_Recipe])
+  SP_MagFillTime.Value = Val(Var_Array[Magnesium_Fill_Time, Var_Recipe])
+  SP_BowlWaterFillTime.Value = Val(Var_Array[Bowl_Water_Fill_Time, Var_Recipe])
+  SP_SampleTime.Value = Val(Var_Array[Sample_Time, Var_Recipe])
+  SP_KaolineFillTime.Value = Val(Var_Array[Kaoline_Fill_Time, Var_Recipe])
+  SP_CentrifugeTime.Value = Val(Var_Array[Centrifuge_Time, Var_Recipe])
+  SP_OutputCaptureTime.Value = Val(Var_Array[Output_Capture_Time, Var_Recipe])
+  
+  SP_StirrerCleanTime.Value = Val(Var_Array[Stirrer_Clean_Time, Var_Recipe])
+  SP_BowlCleanPhase1Time.Value = Val(Var_Array[Bowl_Clean_Phase1_Time, Var_Recipe])
+  SP_BowlCleanPhase2Time.Value = Val(Var_Array[Bowl_Clean_Phase2_Time, Var_Recipe])
+  SP_BowlCleanPhase3Time.Value = Val(Var_Array[Bowl_Clean_Phase3_Time, Var_Recipe])
+END
+
+
+PUBLIC SUB Menu_Recipes_Default_Click()
+  DIM StringToStore AS String
+  DIM New_Default_Recipe AS String
+  DIM name_start AS Integer
+  Dialog.Path = Var_Array[Default_Directory, Var_Ini]
+  Dialog.Filter = ["*.rcp", "Recipe Files"]
+  IF Dialog.OpenFile() THEN RETURN
+  name_start = Len(Var_Array[Default_Directory, Var_Ini])
+  New_Default_Recipe = Mid(Dialog.Path, name_start + 1)  
+  PRINT New_Default_Recipe
+  StringToStore = Var_Array[Max_Input_Containers, Var_Ini] & "\n" &
+                  Var_Array[Max_Output_Containers, Var_Ini] & "\n" &
+                  Var_Array[Input_Containers_Fill_Timeout, Var_Ini] & "\n" &
+                  New_Default_Recipe & "\n" &
+                  Var_Array[Default_Directory, Var_Ini] & "\n" &
+                  Var_Array[Kaoline_Clean_Time, Var_Ini] & "\n" &
+                  Var_Array[Motor_ACC_Time, Var_Ini] & "\n" &
+                  Var_Array[Motor_DEC_Time, Var_Ini] & "\n" &
+                  Var_Array[Tube_Clean_Time, Var_Ini] & "\n" &
+                  Var_Array[Clean_Every_Startup, Var_Ini] & "\n" &
+                  Var_Array[Timeout_Water_Fill_Valve, Var_Ini] & "\n" &
+                  Var_Array[Timeout_Input_Store_Rotate, Var_Ini] & "\n" & 'china
+                  Var_Array[Stirrer_Low_Speed, Var_Ini] & "\n" & 'china
+                  Var_Array[Stirrer_High_Speed, Var_Ini] & "\n" & 'china
+                  Var_Array[CommPortPlc, Var_Ini] & "\n" & 'china
+                  Var_Array[CommPortStirrer, Var_Ini] & "\n" & 'china
+                  Var_Array[Auto_Shutdown, Var_Ini] & "\n"
+                  
+  File.Save(Ini_Path, StringToStore)
+  protect = FALSE
+  Menu_Recipes_Unlock_Click()
+END
+
+PUBLIC FUNCTION DrawLeds()
+  Led.Control(Led_MagLevel, "off")
+  Led.Control(Led_KaolineLevel, "off")
+  Led.Control(Led_StirrerClean, "off")
+  Led.Control(Led_BowlClean, "off")
+  Led.Control(Led_SystemError, "off")
+END
+
+PUBLIC FUNCTION Update_LEDs()
+    IF Stirrer_Dirty = FALSE THEN 
+        Led.Control(Led_StirrerClean, "on")
+    ELSE 
+      IF CleanMachine.Stir_Clean_Pending = FALSE THEN 
+        Led.Control(Led_StirrerClean, "error")
+      ELSE 
+        Led.Control(Led_StirrerClean, "busy")
+      ENDIF
+    ENDIF
+    
+    IF Bowl_Dirty = FALSE THEN 
+      Led.Control(Led_BowlClean, "on")
+    ELSE 
+      IF CleanMachine.Bowl_Clean_Pending = FALSE THEN 
+        Led.Control(Led_BowlClean, "error")
+      ELSE 
+        Led.Control(Led_BowlClean, "busy")
+      ENDIF
+    ENDIF 
+END
+
+
+PUBLIC SUB MainDelay_Timer() ' used to create event. Otherwise I didn't succeed to draw the leds at start.
+  MainDelay.Enabled = FALSE
+  DrawLeds()
+  Progress.Display(BarArea, 0)
+  Init_Machine()
+END
+
+
+
+PUBLIC SUB Menu_Adv_Clean_Stirrer_Click()
+  Set_To_Disable()
+  SerialHandler.TxRxFast(off.lamp_green)
+  SerialHandler.TxRxFast(on.lamp_orange)
+  StatusBox.Text = "Cleaning Stirrer"
+  Led.Control(Led_StirrerClean, "busy")
+  PRINT "setup stir clean"
+  MainAZC.Fill_Time_Table() ' loads all timer settings in variables.
+  SerialHandler.TxRxFast(on.lamp_red)
+
+  'CleanMachine.Stir_Clean_Pending = FALSE
+  CleanMachine.Stir_Clean_Setup = FALSE
+  CleanMachine.Stir(TimeTable.Stirrer_Clean_Time)
+  MainAZC.update_leds()
+  PRINT "waiting via .all"
+  CleanMachine.All(TRUE)
+
+  Led.Control(Led_StirrerClean, "on")
+  PRINT "lamp off"
+  SerialHandler.TxRxFast(off.lamp_red)
+  SerialHandler.TxRxFast(off.lamp_orange)
+  SerialHandler.TxRxFast(on.lamp_green)
+  Set_To_Stop()
+  StatusBox.Text = "Ready"
+END
+
+
+PUBLIC SUB Menu_Adv_Clean_Bowl_Click()
+  Set_To_Disable()
+  SerialHandler.TxRxFast(off.lamp_green)
+  SerialHandler.TxRxFast(on.lamp_orange)
+  StatusBox.Text = "Cleaning Bowl"
+  Led.Control(Led_BowlClean, "busy")
+  PRINT "setup bowl clean"
+  MainAZC.Fill_Time_Table() ' loads all timer settings in variables.
+  SerialHandler.TxRxFast(on.lamp_red)
+  MainAZC.update_leds()
+  ProcessCTRL.Bowl_Stopped = TRUE
+  CleanMachine.Bowl_Setup()
+  PRINT "setup bowl done"
+  Led.Control(Led_BowlClean, "on")
+  PRINT "lamp off"
+  SerialHandler.TxRxFast(off.lamp_red)
+  SerialHandler.TxRxFast(off.lamp_orange)
+  SerialHandler.TxRxFast(on.lamp_green)
+  Set_To_Stop()
+  StatusBox.Text = "Ready"
+END
+
+
+'PUBLIC SUB Clean_All()
+'  Led.Control(Led_StirrerClean, "off")
+'  PRINT "setup stir clean"
+'  Set_To_Disable()
+'  StatusBox.Text = "Clean Stirrer+Clean Bowl"
+'  CleanMachine.Stirrer_Setup(SP_StirrerCleanTime.Value)
+'  PRINT "setup stir done"
+'  Led.Control(Led_BowlClean, "off")
+'  PRINT "setup bowl clean"
+'  Set_To_Disable()
+'  StatusBox.Text = "Clean Stirrer+Clean Bowl"
+ ' CleanMachine.Bowl_Setup()
+ ' PRINT "setup bowl done"
+'  DO
+'     IF (CleanMachine.Stir_Pending = FALSE) THEN Led.Control(Led_StirrerClean, "on")
+'     IF (CleanMachine.Bowl_Pending = FALSE) THEN Led.Control(Led_BowlClean, "on")
+'    WAIT 1
+'  LOOP UNTIL (CleanMachine.Bowl_Pending = FALSE) AND (CleanMachine.Stir_Pending = FALSE)    ' wait for clean timer to expire and stir stop function to finish.
+'  IF (CleanMachine.Stir_Pending = FALSE) THEN Led.Control(Led_StirrerClean, "on")
+'  IF (CleanMachine.Bowl_Pending = FALSE) THEN Led.Control(Led_BowlClean, "on")
+'  Set_To_Stop()
+'END
+
+PUBLIC SUB Fill_Time_Table()
+  TimeTable.Stir_Time = SP_StirTime.Value * 1000
+  TimeTable.Magnesium_Fill_Time = SP_MagFillTime.Value * 1000
+  TimeTable.Bowl_Water_Fill_Time = SP_BowlWaterFillTime.Value * 1000
+  TimeTable.Sample_Time = SP_SampleTime.Value * 1000
+  TimeTable.Kaoline_Fill_Time = SP_KaolineFillTime.Value * 1000
+  TimeTable.Centrifuge_Time = SP_CentrifugeTime.Value * 1000
+  TimeTable.Output_Capture_Time = (SP_OutputCaptureTime.Value * 1000) + (Val(Var_Array[Motor_DEC_Time, Var_Ini]) * 1000) ' new : capture time in the eyes of the user is the value in the spinbox and recipe file.
+
+  TimeTable.Stirrer_Clean_Time = SP_StirrerCleanTime.Value * 1000
+  TimeTable.Bowl_Clean_Phase1_Time = SP_BowlCleanPhase1Time.Value * 1000
+  TimeTable.Bowl_Clean_Phase2_Time = SP_BowlCleanPhase2Time.Value * 1000
+  TimeTable.Bowl_Clean_Phase3_Time = SP_BowlCleanPhase3Time.Value * 1000
+  
+  TimeTable.Kaoline_Valve_Clean_Time = Val(Var_Array[Kaoline_Clean_Time, Var_Ini]) '* 100 'china: added 1000 to make sec
+  TimeTable.Motor_ACC = Val(Var_Array[Motor_ACC_Time, Var_Ini]) * 1000
+  TimeTable.Motor_DEC = Val(Var_Array[Motor_DEC_Time, Var_Ini]) * 1000
+  TimeTable.Tube_Clean = Val(Var_Array[Tube_Clean_Time, Var_Ini]) * 1000
+  
+  overalltime = (SP_StirTime.Value + SP_MagFillTime.Value + SP_BowlWaterFillTime.Value + SP_SampleTime.Value + SP_KaolineFillTime.Value + SP_CentrifugeTime.Value + SP_OutputCaptureTime.Value + Val(Var_Array[Motor_ACC_Time, Var_Ini]) + 30) ' 30 seconds is for movements
+  PRINT "overalltime = " & overalltime
+  
+END 
+
+PUBLIC SUB StatusText(mess AS String)
+  StatusBox.Text = mess
+END
+
+
+PUBLIC SUB Menu_Adv_Clean_Sample_Filter_Click()
+  Set_To_Disable()
+  SerialHandler.TxRxFast(off.lamp_green)
+  SerialHandler.TxRxFast(on.lamp_orange)
+  StatusBox.Text = "Manual clean sample filter"
+  Led.Control(Led_BowlClean, "busy")
+  PRINT "setup manual sample filter clean"
+  SerialHandler.TxRxFast(on.lamp_red)
+  MainAZC.update_leds()
+  StirProcess.MoveStirCleanFilter()
+  WAIT 2
+  Message.Question("Done?")
+  PRINT "manual sample filter clean done"
+  StirProcess.MoveStir("clean")
+  PRINT "lamp off"
+  SerialHandler.TxRxFast(off.lamp_red)
+  SerialHandler.TxRxFast(off.lamp_orange)
+  SerialHandler.TxRxFast(on.lamp_green)
+  Set_To_Stop()
+  StatusBox.Text = "Ready"
+END
+
