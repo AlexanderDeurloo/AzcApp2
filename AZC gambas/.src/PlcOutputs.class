@@ -2,7 +2,7 @@
 
 Library "/home/pi/AzcApp/RevPi/libpiControlIf"
 
-Extern piControlWrite(a As Integer, b As Integer, c As Pointer)
+Extern piControlWrite(Offset As Integer, Length As Integer, Setting As Pointer)
 
 Public Mod30Addr70Data As Integer = 0
 Public Mod30Addr71Data As Integer = 0
@@ -15,10 +15,6 @@ Public Sub Set(Pin As String, State As Integer)
   Dim DataA As Integer
   Dim ModuleAddress As Integer
   Dim PinAddr As Integer
-  
-  'ModuleAddress = Pin
-  'Mod31Data = Mod31Data Or Pin
-  'DataA = Mod31Data
   
   ' figure out which pin:
   If Pin = "AirStirrerLiftRotateForward"
@@ -75,7 +71,7 @@ Public Sub Set(Pin As String, State As Integer)
   Else If Pin = "WaterValveSample"
     ModuleAddress = 183
     PinAddr = 8
-  Else If Pin = "WaterValvaHpPump"
+  Else If Pin = "WaterValveHpPump"
     ModuleAddress = 183
     PinAddr = 16
   Else If Pin = "InputMotor"
@@ -106,10 +102,10 @@ Public Sub Set(Pin As String, State As Integer)
     ModuleAddress = 184
     PinAddr = 32
   Else
-    Print "no valid input" 
+    Print "no valid input in PlcOutput.Set: " & Pin 
     Return
   Endif
-  Print "moduleaddr: " & ModuleAddress & " pinadd " & PinAddr
+  'Print "moduleaddr: " & ModuleAddress & " pinadd " & PinAddr
   ' update setting:
   If State = 1
     If ModuleAddress = 70
@@ -146,7 +142,7 @@ Public Sub Set(Pin As String, State As Integer)
       Return
     Endif
   Endif
-  Print "moduleaddr: " & ModuleAddress & " DataA " & DataA
+  'Print "moduleaddr: " & ModuleAddress & " DataA " & DataA
   
   'send:
   piControlWrite(ModuleAddress, 1, VarPtr(DataA))

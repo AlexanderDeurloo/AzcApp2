@@ -94,7 +94,9 @@ End
 Public Sub form_Close()
  ' StatusBox.Text = "shutting down..."
   StatusBox.Text = "Closing program..."
-  SerialHandler.serial_close()
+  PlcOutputs.Set("WaterValveHpPump", 0) 
+  
+  'SerialHandler.serial_close()
   Wait 0.5
   Stirrer.SerialCloseStirrer()  'china
   Wait 1
@@ -171,69 +173,49 @@ Public Sub Init_Machine() As Boolean
     StatusBox.Text = "Cpu ready..."
     Wait 1
     
-    
-    'DumpI = SerialHandler.open_serial(Var_Array[CommPortPlc, Var_Ini])  '("/dev/ttyS0")
-    'Print "open_serial returncode = " & DumpI
-    'If DumpI = 2 Then
-    '  Print "plc did not respond"
-    '  Message.Error("No contact with PLC", "Stop")
-    '  Quit
-    'Else If DumpI = 1 Then
-    '  Print "open ok"
-    'Else
-    '  Print "not able to open serial port"
-    '  Message.Error("No contact with PLC", "Stop")
-    '  Quit
-    'Endif
-    
-    ' TODO: add error handler: quit if open serial fails.
-'    PRINT " open ok"
-    ' [GB2:KEYW] ReceivedData = SerialHandler.TxRxFast(on.lamp_red)
-    ' ReceivedData = SerialHandler.TxRxFast({On}.lamp_red)'debugger: turned off
-    
-    PlcOutputs.Set("StirrerPower", 1)
-    Wait 1
-    PlcOutputs.Set("InputMotor", 1)
-    Wait 1
-    PlcOutputs.Set("AirTubeValveSample", 1)
-    Wait 1
-     PlcOutputs.Set("AirTubeValveSample", 0)
-    Wait 1
-     PlcOutputs.Set("StirrerPower", 0)
-    Wait 1
-    PlcOutputs.Set("InputMotor", 0)
-    Wait 1
+    'PlcOutputs.Set("StirrerPower", 1)
+    'Wait 1
+    'PlcOutputs.Set("InputMotor", 1)
+    'Wait 1
+    'PlcOutputs.Set("AirTubeValveSample", 1)
+    'Wait 1
+    ' PlcOutputs.Set("AirTubeValveSample", 0)
+    'Wait 1
+    ' PlcOutputs.Set("StirrerPower", 0)
+    'Wait 1
+    'PlcOutputs.Set("InputMotor", 0)
+    'Wait 1
    
-    StatusBox.Text = "Plc controlled..."
-    Wait 1
     Print " first tx done"
-  Quit    
   
-    'china: TODO: switch stirrer on and init it.
-    ' [GB2:KEYW] ReceivedData = ReceivedData & SerialHandler.TxRxFast(on.stirrer)  'china
-    ReceivedData = ReceivedData & SerialHandler.TxRxFast({On}.stirrer)  'china
+    PlcOutputs.Set("StirrerPower", 1)
+  ' TODO TODO !!!
     Wait 0.05
-    Stirrer.SerialOpenStirrer(Var_Array[CommPortStirrer, Var_Ini])   '("/dev/ttyS4") 'china
-    ReceivedData = ReceivedData & SerialHandler.TxRxFast(off.lamp_red)
-    Wait 0.05
-    ReceivedData = ReceivedData & SerialHandler.TxRxFast(off.lamp_orange)
-    Wait 0.05
-    ReceivedData = ReceivedData & SerialHandler.TxRxFast(off.lamp_green)
-    If ReceivedData = ("ERR00ERR00ERR00ERR00ERR00ERR00ERR00")  ' 7 x ERR0 means 7 x expected reply : PLC ready.
+    'Stirrer.SerialOpenStirrer(Var_Array[CommPortStirrer, Var_Ini])   '("/dev/ttyS4") 'china
+    'ReceivedData = ReceivedData & SerialHandler.TxRxFast(off.lamp_red)
+    'Wait 0.05
+    'ReceivedData = ReceivedData & SerialHandler.TxRxFast(off.lamp_orange)
+    'Wait 0.05
+    'ReceivedData = ReceivedData & SerialHandler.TxRxFast(off.lamp_green)
+    'If ReceivedData = ("ERR00ERR00ERR00ERR00ERR00ERR00ERR00")  ' 7 x ERR0 means 7 x expected reply : PLC ready.
       StatusBox.Text = "Machine ready"
       StartButton.Enabled = True
       led.Control(Led_SystemError, "off")
-    Else
-      StatusBox.Text = "no connection with PLC"
-      Print "received: " & ReceivedData
-      Led.Control(Led_SystemError, "error")
-      Wait 3
-      form_Close()
-    Endif
+    'Else
+    '  StatusBox.Text = "no connection with PLC"
+    '  Print "received: " & ReceivedData
+    '  Led.Control(Led_SystemError, "error")
+    '  Wait 3
+    '  form_Close()
+    'Endif
     nogo = False
-    If Check.Magnesium_Level() = "true" Then Led.Control(Led_MagLevel, "on")
-    If Check.Kaoline_Level() = "true" Then Led.Control(Led_KaolineLevel, "on")
+    
+      'Print PlcInputs.Read("AirStirrerLiftRotateBackward")
+    
+    If (PlcInputs.Read("MagnesiumLevel") = 1) Then Led.Control(Led_MagLevel, "on")
+    If (PlcInputs.Read("KaolineLevel") = 1) Then Led.Control(Led_KaolineLevel, "on")
     Clean_Every_Startup_Flag = False
+    
     If Var_Array[Clean_Every_Startup, Var_Ini] = 1 Then Clean_Every_Startup_Flag = True
     Print "clean flag = "
     If Clean_Every_Startup_Flag = False Then
@@ -251,20 +233,20 @@ Public Sub Init_Machine() As Boolean
       Led.Control(Led_BowlClean, "error")
       Led.Control(Led_StirrerClean, "error")
     Endif
-    
     Wait 0.5
-    ' [GB2:KEYW] ReceivedData = SerialHandler.TxRxFast(on.lamp_green)
-    ReceivedData = SerialHandler.TxRxFast({On}.lamp_green)
+    'ReceivedData = SerialHandler.TxRxFast({On}.lamp_green)
     Set_To_Stop()
     StatusBox.Text = "Machine ready"
     Wait 0.5
-    ' [GB2:KEYW] SerialHandler.TxRxFast(on.water_valve_HP)   ' new since water buffer of HP can be empty at startup
-    SerialHandler.TxRxFast({On}.water_valve_HP)   ' new since water buffer of HP can be empty at startup
-    ' [GB2:KEYW] fillcmd = on.Water_Fill_TimeOut & (Var_Array[Timeout_Water_Fill_Valve, Var_Ini])
+    PlcOutputs.Set("WaterValveHpPump", 1) ' since water buffer of HP can be empty at startup
+    ' generate command for PLC to inform about the waterfill timeout.
     fillcmd = {On}.Water_Fill_TimeOut & (Var_Array[Timeout_Water_Fill_Valve, Var_Ini])
-    ReceivedData = SerialHandler.TxRxFast(fillcmd)
+    Print "fillcmd = " & fillcmd
+    Wait 2
+    Quit 'debugger
+    
+    'ReceivedData = SerialHandler.TxRxFast(fillcmd)
     Wait 0.5                        'china
-    ' [GB2:KEYW] fillcmd = on.input_store_next_TimeOut & (Var_Array[Timeout_Input_Store_Rotate, Var_Ini]) 'china
     fillcmd = {On}.input_store_next_TimeOut & (Var_Array[Timeout_Input_Store_Rotate, Var_Ini]) 'china
     ReceivedData = SerialHandler.TxRxFast(fillcmd)  'china
 End

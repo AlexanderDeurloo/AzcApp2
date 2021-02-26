@@ -25,12 +25,13 @@ SearchComment=False
 SearchString=True
 
 [OpenFile]
-Count=4
-Active=2
-File[1]=".src/SerialHandler.class:34.80"
-File[2]=".src/MainAZC.class:0.173"
-File[3]=".src/SerialCpuComm.class:0.2"
-File[4]=".src/PlcOutputs.class:29.133"
+Count=5
+Active=1
+File[1]=".src/MainAZC.class:22.231"
+File[2]=".src/SerialCpuComm.class:0.2"
+File[3]=".src/PlcOutputs.class:33.73"
+File[4]=".src/PlcInputs.class:24.85"
+File[5]=".src/Led.module:0.26"
 
 [Watches]
 Count=1

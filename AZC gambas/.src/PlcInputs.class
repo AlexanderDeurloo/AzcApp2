@@ -1,0 +1,116 @@
+' Gambas class file
+
+Library "/home/pi/AzcApp/RevPi/libpiControlIf"
+
+Extern piControlRead(Offset As Integer, Length As Integer, Result As Pointer)
+
+Public Sub Read(Pin As String) As Integer
+  
+  Dim Result As Integer
+  Dim ModuleAddress As Integer
+  Dim PinAddr As Integer
+
+  ' figure out which pin:
+  If Pin = "StirrerLiftRotateForward"
+    ModuleAddress = 0     ' 0 = mod30, first 8 pins
+    PinAddr = 1
+  Else If Pin = "StirrerLiftRotateBackward"
+    ModuleAddress = 0
+    PinAddr = 2
+  Else If Pin = "StirrerLiftUp"
+    ModuleAddress = 0
+    PinAddr = 4
+  Else If Pin = "StirrerLiftDown"
+    ModuleAddress = 0
+    PinAddr = 8
+  Else If Pin = "OutputMoveForward"
+    ModuleAddress = 0
+    PinAddr = 16
+  Else If Pin = "OutputMoveBackward"
+    ModuleAddress = 0
+    PinAddr = 32
+  Else If Pin = "OutputRotateOn"
+    ModuleAddress = 0
+    PinAddr = 64
+  Else If Pin = "OutputRotateOff"
+    ModuleAddress = 0
+    PinAddr = 128
+  Else If Pin = "BowlDrainForward"
+    ModuleAddress = 1         ' 71 = mod30, last 6 pins
+    PinAddr = 1
+  Else If Pin = "BowlDrainBackward"
+    ModuleAddress = 1
+    PinAddr = 2
+  Else If Pin = "TubeValveSample"
+    ModuleAddress = 1
+    PinAddr = 4
+  Else If Pin = "TubeValveMagnesium"
+    ModuleAddress = 1
+    PinAddr = 8
+  Else If Pin = "TubeValveKaoline"
+    ModuleAddress = 1
+    PinAddr = 16
+  Else If Pin = "Spare1"
+    ModuleAddress = 1
+    PinAddr = 32
+  Else If Pin = "InputPosition"
+    ModuleAddress = 113     ' 113 = input mod31, first 8 pins
+    PinAddr = 1
+  Else If Pin = "InputContainerLevel"
+    ModuleAddress = 113
+    PinAddr = 2
+  Else If Pin = "InputContainerPresent"
+    ModuleAddress = 113
+    PinAddr = 4
+  Else If Pin = "OutputContainerPresent"
+    ModuleAddress = 113
+    PinAddr = 8
+  Else If Pin = "MagnesiumLevel"
+    ModuleAddress = 113
+    PinAddr = 16
+  Else If Pin = "KaolineLevel"
+    ModuleAddress = 113
+    PinAddr = 32
+  Else If Pin = "Spare2"
+    ModuleAddress = 113
+    PinAddr = 64
+  Else If Pin = "Spare3"
+    ModuleAddress = 113
+    PinAddr = 128
+  Else If Pin = "Spare4"
+    ModuleAddress = 114     ' 184 = mod31, last 6 pins
+    PinAddr = 1
+  Else If Pin = "Spare5"
+    ModuleAddress = 114
+    PinAddr = 2
+  Else If Pin = "Spare6"
+    ModuleAddress = 114
+    PinAddr = 4
+  Else If Pin = "Spare7"
+    ModuleAddress = 114
+    PinAddr = 8
+  Else If Pin = "Spare8"
+    ModuleAddress = 114
+    PinAddr = 16
+  Else If Pin = "Spare9"
+    ModuleAddress = 114
+    PinAddr = 32
+  Else
+    Print "no valid input in PlcInput.Read: " & Pin
+    Return
+  Endif
+  'Print "moduleaddr: " & ModuleAddress & " pinadd " & PinAddr
+
+  ' read status:
+  piControlRead(ModuleAddress, 1, VarPtr(Result))
+  Print "Result = " & Result
+  Result = Result And PinAddr
+
+  'Print "Result after logic and = " & Result
+
+  If Result 
+    Return 1
+  Else 
+    Return 0
+  Endif
+End
