@@ -1,0 +1,74 @@
+# Gambas Form File 3.0
+{ Form Form 
+  MoveScaled(0,0,64,64)
+  { TimerStir #Timer 
+    #MoveScaled(0,0)
+  }
+  { Label1 Label 
+    MoveScaled(2,9,24,4)
+    Text = ("Stir Time")
+  }
+  { TimerBowlSpeedup #Timer 
+    #MoveScaled(1,1)
+  }
+  { Label2 Label 
+    MoveScaled(2,16,24,4)
+    Text = ("Bowl speed up time")
+  }
+  { TimerMagn #Timer 
+    #MoveScaled(2,2)
+  }
+  { Label3 Label 
+    MoveScaled(2,21,24,4)
+    Text = ("magn fill time")
+  }
+  { TimerWater #Timer 
+    #MoveScaled(3,3)
+  }
+  { Label4 Label 
+    MoveScaled(2,27,24,4)
+    Text = ("water fill time")
+  }
+  { TimerSample #Timer 
+    #MoveScaled(4,4)
+  }
+  { Label5 Label 
+    MoveScaled(2,33,24,4)
+    Text = ("sample fill time")
+  }
+  { TimerKaoline #Timer 
+    #MoveScaled(5,5)
+  }
+  { Label6 Label 
+    MoveScaled(2,39,24,4)
+    Text = ("kaoline fill time")
+  }
+  { TimerCentrifuge #Timer 
+    #MoveScaled(6,6)
+  }
+  { Label7 Label 
+    MoveScaled(2,45,24,4)
+    Text = ("centrifuge time")
+  }
+  { TimerCapture #Timer 
+    #MoveScaled(7,7)
+  }
+  { Label8 Label 
+    MoveScaled(2,51,24,4)
+    Text = ("capture time")
+  }
+  { TimerBowlSlowDown #Timer 
+    #MoveScaled(8,8)
+  }
+  { Label9 Label 
+    MoveScaled(2,57,24,4)
+    Text = ("Bowl Slow Done time")
+  }
+  { TimerBowlStartDelay #Timer 
+    #MoveScaled(9,9)
+  }
+  { Label10 Label 
+    MoveScaled(33,12,24,4)
+    Text = ("Bowl start delay")
+  }
+}

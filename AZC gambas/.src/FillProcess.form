@@ -1,0 +1,17 @@
+# Gambas Form File 3.0
+{ Form Form 
+  MoveScaled(0,0,64,64)
+  { TimerFill #Timer 
+    #MoveScaled(0,0)
+  }
+  { TimerStir #Timer 
+    #MoveScaled(1,1)
+  }
+  { Label1 Label 
+    MoveScaled(4,36,24,4)
+    Text = ("Bowl start delay")
+  }
+  { TimerBowlStartDelay #Timer 
+    #MoveScaled(2,2)
+  }
+}

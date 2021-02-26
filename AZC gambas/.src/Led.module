@@ -1,0 +1,27 @@
+' Gambas module file
+
+Public Function Control(LedName As DrawingArea, status As String)
+
+  Paint.Begin(LedName)
+  Paint.FillRule = Fill.Solid
+
+  Paint.Brush = Paint.Color(Color.DarkGray)
+  Paint.Arc(10, 12, 10) ' background of led
+  Paint.Fill
+
+  'Paint.LineWidth = 1
+
+  If status = "on" Then
+    Paint.Brush = Paint.Color(color.Green)
+  Else If status = "off" Then
+    Paint.Brush = Paint.Color(color.LightGray)
+  Else If status = "error" Then
+    Paint.Brush = Paint.Color(color.Red)
+  Else If status = "busy"
+    Paint.Brush = Paint.Color(color.Orange)
+  Endif
+  Paint.Brush = Paint.Color(color.DarkGray)
+  Paint.Arc(10, 12, 8) 
+  Paint.End
+End
+

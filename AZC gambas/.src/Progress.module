@@ -1,0 +1,34 @@
+' Gambas module file
+
+Public Function Display(Bar As DrawingArea, progr As Integer)
+  
+  'void
+  Dim procents As Integer
+  Dim kader As Integer
+  Dim i As Integer
+  If progr > 100 Then progr = 100   ' max limit
+  kader = 6
+  procents = (Bar.Width - kader) * progr / 100
+  'procents = 50
+  Paint.Begin(Bar)
+  Paint.FillRule = Fill.Solid
+  Paint.LineWidth = kader
+  Paint.Brush = Paint.Color(color.White)
+  Paint.Rectangle(0, 0, Bar.Width, Bar.Height + 1)
+
+    'Paint.FillStyle = Fill.Dense50
+    Paint.Brush = Paint.Color(color.Red)
+    Paint.LineWidth = Bar.Height - kader
+    Paint.MoveTo(kader / 2, Bar.Height / 2)
+    Paint.LineTo(((kader / 2) + procents), Bar.Height / 2)
+  
+    Paint.Brush = Paint.Color(color.White)
+    Paint.LineWidth = 1
+    For i = 1 To 9 Step 1
+      Paint.MoveTo(kader / 2 + (i * (Bar.Width - kader) / 10), 0)
+      Paint.LineTo(kader / 2 + (i * (Bar.Width - kader) / 10), Bar.Height)
+    Next
+  Paint.End
+  
+End
+

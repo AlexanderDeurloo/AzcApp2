@@ -1,0 +1,18 @@
+# Gambas Form File 3.0
+{ Form Form 
+  MoveScaled(70,26.4286,38,17)
+  Text = ("Serial Port")
+  { SPort #SerialPort 
+    #MoveScaled(0,0)
+    FlowControl = 0
+    PortName = "/dev/ttyS0"
+    Speed = 9600
+  }
+  { Label2 Label 
+    MoveScaled(2,2,24,4)
+    Text = ("All the settings are in here:")
+  }
+  { TimerOutSerial #Timer 
+    #MoveScaled(1,1)
+  }
+}

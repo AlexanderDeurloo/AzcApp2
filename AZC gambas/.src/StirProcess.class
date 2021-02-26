@@ -1,0 +1,91 @@
+' Gambas class file
+
+Public Sub Fill_Stir_Setup() As String  'china: seems to be unused !!
+  Dim Errors As String = ""
+  Dim reply As String = ""
+  reply = Search.Output_Container()
+  If reply <> "Found" Then Errors = "ERR97"
+  reply = Search.Input_Container()
+  If reply <> "Found" Then Errors = "ERR97"
+  If Errors <> "" Then Goto finish
+  ' check if container is full yet, so n0 fill required:
+  If Check.Water_Level = "true" Then
+    ' skip water fill
+  Else
+    ' fill container : send command to PLC, which handles the entire process.
+  Endif
+  ' poll water level until "true"
+  ' what about starting the stirrer already?
+finish:
+  Return Errors
+End
+
+
+Public Sub MoveStir(position As String)
+  If position = "clean" Then
+    If Check.Stirrer_Rotate() = "stir" Then
+      If Check.Stirrer_Lift() = "down" Then
+        ' [GB2:KEYW] SerialHandler.TxRxFast(on.stirrer_lift) ' lift up
+        SerialHandler.TxRxFast({On}.stirrer_lift) ' lift up
+        Do
+          Wait 0.1
+        Loop Until Check.Stirrer_Lift() = "up"
+      Endif
+      Wait 1
+      SerialHandler.TxRxFast(off.stirrer_rotate)
+      Do
+        Wait 0.1
+      Loop Until Check.Stirrer_Rotate() = "clean"
+    Endif
+    If Check.Stirrer_Lift() = "up" Then
+      SerialHandler.TxRxFast(off.stirrer_lift) ' lift down
+      Do
+        Wait 0.1
+      Loop Until Check.Stirrer_Lift() = "down"
+    Endif
+  Else If position = "stir" Then
+    If Check.Stirrer_Rotate() = "clean" Then
+      If Check.Stirrer_Lift() = "down" Then
+        ' [GB2:KEYW] SerialHandler.TxRxFast(on.stirrer_lift) ' lift up
+        SerialHandler.TxRxFast({On}.stirrer_lift) ' lift up
+        Do
+          FillProcess.CheckFill()
+          Wait 0.2
+        Loop Until Check.Stirrer_Lift() = "up"
+      Endif
+      ' [GB2:KEYW] SerialHandler.TxRxFast(on.stirrer_rotate)
+      SerialHandler.TxRxFast({On}.stirrer_rotate)
+      Do
+        FillProcess.CheckFill()
+        Wait 0.2
+      Loop Until Check.Stirrer_Rotate() = "stir"
+    Endif
+    If (Check.Stirrer_Lift() = "up") Then
+      SerialHandler.TxRxFast(off.stirrer_lift) ' lift down
+      Do
+        FillProcess.CheckFill()
+        Wait 0.2
+      Loop Until Check.Stirrer_Lift() = "down"
+    Endif
+  Endif
+  Return
+End
+
+
+Public Sub MoveStirCleanFilter()
+  If Check.Stirrer_Lift() = "down" Then
+    ' [GB2:KEYW] SerialHandler.TxRxFast(on.stirrer_lift) ' lift up
+    SerialHandler.TxRxFast({On}.stirrer_lift) ' lift up
+    Do
+      Wait 0.2
+    Loop Until Check.Stirrer_Lift() = "up"
+  Endif
+  ' [GB2:KEYW] SerialHandler.TxRxFast(on.stirrer_rotate) 'rotate to stir position
+  SerialHandler.TxRxFast({On}.stirrer_rotate) 'rotate to stir position
+  Do
+    FillProcess.CheckFill()
+    Wait 0.2
+  Loop Until Check.Stirrer_Rotate() = "stir"
+  Return
+End
+

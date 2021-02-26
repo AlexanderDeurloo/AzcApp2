@@ -1,0 +1,290 @@
+' Gambas class file
+Public Kaoline_Clean_Pending As Boolean = False
+Public Bowl_Clean_Pending As Boolean = False
+Public Tube_Clean_Pending As Boolean = False
+
+Public Stir_Clean_Pending As Boolean = False
+Public Stir_Clean_Setup As Boolean = False
+
+Public Sub All(skipbowl As Boolean)
+  If (Stir_Clean_Setup = True) Then ' stir cleaning is not stopped yet
+  Print " stir is bezig"
+  Do
+    Wait 0.1
+    If MainAZC.StopProcess = 1 Then Goto finish
+  Loop Until Stir_Stop_Check() = "done"   ' check until stirrer clean is done.
+  Endif
+  Print "nu de bowl dan"
+  Wait 0.5
+  If skipbowl = False Then Bowl_Setup()
+finish:
+End
+
+
+Public Sub Stir(cleanTime As Integer) ' cleantime in seconds
+  Print "cleantime = " & cleanTime
+  If Stir_Clean_Setup = False Then
+    MainAZC.Stirrer_Dirty = True
+    MainAZC.update_leds()
+    Stir_Clean_Pending = True
+    Stirrer_Setup(cleanTime)
+    Stir_Clean_Setup = True
+    Return
+  Endif
+  Wait 0.1
+  Print "stir clean pending = " & Stir_Clean_Pending
+  If (Stir_Clean_Pending = False) Then
+    Stirrer_Stop()  ' close all valves
+    Stir_Clean_Setup = False
+    Stir_Clean_Pending = False
+    MainAZC.Stirrer_Dirty = False
+    MainAZC.update_leds()
+    Return
+  Endif
+  Return
+End
+
+
+Public Sub Stirrer_Setup(cleanTime As Integer)
+  ' check position
+  If Check.Stirrer_Rotate() = "stir" Then
+    If Check.Stirrer_Lift() = "down" Then
+      ' [GB2:KEYW] SerialHandler.TxRxFast(on.stirrer_lift) ' lift up
+      SerialHandler.TxRxFast({On}.stirrer_lift) ' lift up
+      Do
+        FillProcess.CheckFill()
+        Wait 0.1
+      Loop Until Check.Stirrer_Lift() = "up"
+    Endif
+    SerialHandler.TxRxFast(off.stirrer_rotate)
+    Do
+        FillProcess.CheckFill()
+        Wait 0.1
+    Loop Until Check.Stirrer_Rotate() = "clean"
+  Endif
+  If Check.Stirrer_Lift() = "up" Then
+    SerialHandler.TxRxFast(off.stirrer_lift) ' lift down
+    Do
+        FillProcess.CheckFill()
+        Wait 0.1
+    Loop Until Check.Stirrer_Lift() = "down"
+  Endif
+  'china: use serial control for stirrer:
+  Stirrer.SetRpm(Val(MainAZC.Var_Array[MainAZC.Stirrer_Low_Speed, MainAZC.Var_Ini]))    '
+  ' stirrer is on position now.
+  'SerialHandler.TxRxFast(off.stirrer_max)       ' stir slow speed
+  'WAIT 0.1
+  'SerialHandler.TxRxFast(on.stirrer)            ' stir on
+
+  Wait 0.1
+  ' [GB2:KEYW] SerialHandler.TxRxFast(on.water_valve_clean)  ' water in clean centre
+  SerialHandler.TxRxFast({On}.water_valve_clean)  ' water in clean centre
+  Wait 0.1
+  ' [GB2:KEYW] SerialHandler.TxRxFast(on.sample_valve)       ' sample tube
+  SerialHandler.TxRxFast({On}.sample_valve)       ' sample tube
+  Wait 0.1
+  ' [GB2:KEYW] SerialHandler.TxRxFast(on.water_valve_tube)   ' clean tube with water
+  SerialHandler.TxRxFast({On}.water_valve_tube)   ' clean tube with water
+  TimerStirClean.Enabled = False
+  TimerStirClean.Delay = cleanTime 'ms
+  TimerStirClean.Enabled = True
+  Print "timer stir started..." & CStr(cleanTime) & "msec"
+  Return
+End
+
+Public Sub TimerStirClean_Timer()
+  TimerStirClean.Enabled = False
+  Stir_Clean_Pending = False
+  Print "stir cleaN TIMER END"
+End
+
+
+Public Sub Stirrer_Stop()
+  SerialHandler.TxRxFast(off.water_valve_tube)
+  Wait 0.1
+  SerialHandler.TxRxFast(off.sample_valve)
+  Wait 0.1
+  SerialHandler.TxRxFast(off.water_valve_clean)
+  Wait 0.1
+  'SerialHandler.TxRxFast(off.stirrer)
+  Stirrer.SetRpm(0)  'china: use serial control for stirrer
+  Wait 0.1
+End
+
+Public Sub Stir_Stop_Check() As String
+  If (Stir_Clean_Pending = False) And (Stir_Clean_Setup = True) Then    ' to check is time expired + to avoid restart cleaning
+    Stir(0)  ' STOPS STIR CLEANING
+    Print "clean is fini"
+    Return "done"
+  Endif
+  Return "busy"
+End
+
+
+
+
+
+
+
+
+
+
+Public Sub Bowl_Setup()
+  MainAZC.Bowl_Dirty = True
+  Bowl_Clean_Pending = True
+  MainAZC.update_leds()
+  Print "bowl clean"
+
+  Print "wait for stir to complete"
+  Do
+    Wait 0.1
+    If MainAZC.StopProcess = 1 Then Goto finish
+  Loop Until (Stir_Clean_Pending = False)
+  Print "stir is ready, bowl can continue"
+  Print "freq1 off"
+  Print SerialHandler.TxRxFast(off.freq_1)  ' safety
+  Print "freq 2 off"
+  Print SerialHandler.TxRxFast(off.freq_2)  ' safety
+  Print "wait until bowl stopped(simple timer)"
+  Do
+    Wait 0.1
+    Print ","
+  Loop Until ProcessCTRL.Bowl_Stopped = True  ' wait for bowl to stop. This way we make sure that the tiny motor can be attached.
+  
+  Print "make output store position is off"
+  If Check.Output_Store_Move() = "on" Then
+    SerialHandler.TxRxFast(off.output_store_move)
+    Do
+     Wait 0.1
+    Loop Until Check.Output_Store_Move() = "off"
+  Endif
+
+  Print "make drain_bowl position off (which should be under bowl)"  'china: move it under bowl
+  If Check.Drain_Bowl_Position() = "on" Then
+    SerialHandler.TxRxFast(off.drain_bowl)
+    Do
+     Wait 0.1
+    Loop Until Check.Drain_Bowl_Position() = "off"
+  Endif
+
+  ' wait for stir clean.
+  Print "bowl ls"
+  ' bowl slow speed
+  If MainAZC.StopProcess = 1 Then Goto finish
+  ' [GB2:KEYW] Print SerialHandler.TxRxFast(on.bowl_low_speed)
+  Print SerialHandler.TxRxFast({On}.bowl_low_speed)
+  Wait 0.5
+  ' kaoline clean moment
+  Print "clean kaoline tube"
+  ' [GB2:KEYW] SerialHandler.TxRxFast(on.kaoline_valve)  ' open kaoline valve.
+  SerialHandler.TxRxFast({On}.kaoline_valve)  ' open kaoline valve.
+  Kaoline_Clean_Pending = True
+  TimerKaolineClean.Delay = TimeTable.Kaoline_Valve_Clean_Time
+  TimerKaolineClean.Enabled = True
+  ' [GB2:KEYW] SerialHandler.TxRxFast(on.water_valve_tube)      ' push kaoline back with clean water
+  SerialHandler.TxRxFast({On}.water_valve_tube)      ' push kaoline back with clean water
+  Do
+    Wait 0.001
+    If MainAZC.StopProcess = 1 Then Goto finish
+  Loop Until Kaoline_Clean_Pending = False    ' wait for kaoline time.
+  SerialHandler.TxRxFast(off.water_valve_tube)
+  SerialHandler.TxRxFast(off.kaoline_valve)
+  Wait 1
+  Print " do the bowl clean procedure"
+  Tube_Clean_Pending = True
+  ' [GB2:KEYW] SerialHandler.TxRxFast(on.water_valve_tube)
+  SerialHandler.TxRxFast({On}.water_valve_tube)
+  ' [GB2:KEYW] SerialHandler.TxRxFast(on.pump_tube)
+  SerialHandler.TxRxFast({On}.pump_tube)
+  TimerCleanTube.Delay = TimeTable.Tube_Clean
+  TimerCleanTube.Enabled = True
+  Do
+    Wait 0.01
+    If MainAZC.StopProcess = 1 Then Goto finish
+  Loop Until Tube_Clean_Pending = False
+  SerialHandler.TxRxFast(off.water_valve_tube)
+  SerialHandler.TxRxFast(off.pump_tube)
+
+  Wait 0.5
+  ' [GB2:KEYW] SerialHandler.TxRxFast(on.water_valve_HP)
+  SerialHandler.TxRxFast({On}.water_valve_HP)
+  Wait 1
+  ' [GB2:KEYW] SerialHandler.TxRxFast(on.high_pressure)
+  SerialHandler.TxRxFast({On}.high_pressure)
+  TimerBowlClean.Delay = TimeTable.Bowl_Clean_Phase1_Time 'ms
+  TimerBowlClean.Enabled = True
+  Print "timer bowl phase1 started..." & CStr(TimeTable.Bowl_Clean_Phase1_Time) & "msec"
+  Do
+    Wait 0.1
+    If MainAZC.StopProcess = 1 Then Goto finish
+  Loop Until Bowl_Clean_Pending = False
+  SerialHandler.TxRxFast(off.high_pressure)
+  'SerialHandler.TxRxFast(off.water_valve_HP) ' new: to allow buffer to fill
+  Bowl_Clean_Pending = True
+  TimerBowlClean.Delay = TimeTable.Bowl_Clean_Phase2_Time 'ms
+  TimerBowlClean.Enabled = True
+  Print "timer bowl phase2 started..." & CStr(TimeTable.Bowl_Clean_Phase2_Time) & "msec"
+  Do
+    Wait 0.1
+    If MainAZC.StopProcess = 1 Then Goto finish
+  Loop Until Bowl_Clean_Pending = False
+  
+  ' [GB2:KEYW] SerialHandler.TxRxFast(on.water_valve_HP)
+  SerialHandler.TxRxFast({On}.water_valve_HP)
+  ' [GB2:KEYW] SerialHandler.TxRxFast(on.high_pressure)
+  SerialHandler.TxRxFast({On}.high_pressure)
+  Bowl_Clean_Pending = True
+  TimerBowlClean.Delay = TimeTable.Bowl_Clean_Phase3_Time 'ms
+  TimerBowlClean.Enabled = True
+  Print "timer bowl phase3 started..." & CStr(TimeTable.Bowl_Clean_Phase3_Time) & "msec"
+  Do
+    Wait 0.1
+    If MainAZC.StopProcess = 1 Then Goto finish
+  Loop Until Bowl_Clean_Pending = False
+   
+  Bowl_Stop()
+  MainAZC.Bowl_Dirty = False
+  MainAZC.update_leds()
+finish:
+  Return
+End
+
+
+
+
+Public Sub Bowl_Stop()
+  SerialHandler.TxRxFast(off.high_pressure)
+  Wait 0.2
+  'SerialHandler.TxRxFast(off.water_valve_HP) ' new: allow buffer to fill
+  Wait 0.2
+  SerialHandler.TxRxFast(off.bowl_low_speed)
+  Print "bowl is clean and all related ctrls are off"
+  Return
+End
+
+Public Sub TimerKaolineClean_Timer()
+  TimerKaolineClean.Enabled = False
+  Print "kaoline tube clean time expired"
+  Kaoline_Clean_Pending = False
+  Return
+End
+
+Public Sub TimerBowlClean_Timer()
+  TimerBowlClean.Enabled = False
+  Print "bowl clean timer expired"
+  Bowl_Clean_Pending = False
+End
+
+
+Public Sub TimerCleanTube_Timer()
+  TimerCleanTube.Enabled = False
+  Tube_Clean_Pending = False
+End
+
+Public Sub STOP_TIMERS()
+  TimerBowlClean.Enabled = False
+  TimerCleanTube.Enabled = False
+  TimerKaolineClean.Enabled = False
+  TimerStirClean.Enabled = False
+End
+

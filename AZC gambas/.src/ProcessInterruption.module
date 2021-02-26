@@ -1,0 +1,38 @@
+' Gambas module file
+
+Public Sub Stop()
+  Dim reply As String
+  
+  Print "stop triggered"
+  ' [GB2:KEYW] SerialHandler.TxRx(on.lamp_red)
+  SerialHandler.TxRx({On}.lamp_red)
+  SerialHandler.TxRx(off.lamp_green)
+  SerialHandler.TxRx(off.lamp_orange)
+  Print "red on, others off"
+ 
+  reply = SerialHandler.TxRx(off.input_store_rotate)  'china
+  'reply = SerialHandler.TxRx(off.drain_bowl)          'china: we do not know where the output store is.
+  reply = SerialHandler.TxRx(off.pump_magnesium)      'china
+  
+  reply = SerialHandler.TxRx(off.high_pressure)
+
+  reply = SerialHandler.TxRx(off.water_valve_clean)
+  reply = SerialHandler.TxRx(off.water_valve_fill)
+  reply = SerialHandler.TxRx(off.water_valve_HP)
+  reply = SerialHandler.TxRx(off.water_valve_tube)
+  reply = SerialHandler.TxRx(off.kaoline_valve)
+  reply = SerialHandler.TxRx(off.magnesium_valve)
+  reply = SerialHandler.TxRx(off.sample_valve)
+    
+  reply = SerialHandler.TxRx(off.pump_tube)
+
+  reply = SerialHandler.TxRx(off.bowl_low_speed)
+  reply = SerialHandler.TxRx(off.freq_1)
+  reply = SerialHandler.TxRx(off.freq_2)
+
+  'use new serial control for stirrer  'china
+  Stirrer.SetRpm(0)    '
+  'reply = SerialHandler.TxRx(off.stirrer)
+  'reply = SerialHandler.TxRx(off.stirrer_max)
+  Print "end stop"
+End

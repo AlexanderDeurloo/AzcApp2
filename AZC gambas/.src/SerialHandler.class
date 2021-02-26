@@ -1,0 +1,137 @@
+' Gambas class file
+
+Public RXdata As String
+Public RXdataPending As String
+Public TimeOut As Boolean
+Public DumpS As String
+
+Public Sub Open_Serial(NamePort As String) As Integer
+  Dim retry As Integer
+  Wait 1  ' required. 0.1 works also.
+  Print NamePort
+  Print "about TO OPEN port " & NamePort
+  Sport.PortName = NamePort   'china
+  Wait 0.2
+  If Sport.Status = Net.inActive Then
+  'Sport.PortName = "/dev/ttyS0"  ' china
+    Sport.Speed = 9600
+    Sport.DataBits = 8
+    Sport.StopBits = 1
+    Print "seems to be inactive" 'debugger
+    Do
+      Print "let's try to open" 'debugger
+      Try
+        Sport.Open()
+      If Error Then
+        Print "retry " & retry & " of 100 opening " & Sport.PortName
+        If retry > 2 Then MainAZC.StatusText("Retry " & retry & " of 100 opening " & Sport.PortName)
+      Else
+        Print "Successful opened " & Sport.PortName
+        If retry > 2 Then MainAZC.StatusText(Sport.PortName & " opened successful.")
+        Break
+      Endif
+      Wait 2
+      Inc retry
+    Loop Until retry = 100
+    
+    
+    Wait 2
+    'DumpS = TxRxFast("\n")  ' send a linefeed without command. plc responce with err98
+    'If DumpS = "ERR98" Then
+    '  Return 2  ' no reply from PLC
+    'Else
+      Return 1  ' plc replied
+    'Endif
+  Else
+    Return 0    ' serial port not available
+  Endif
+End
+
+Public Sub Transmit(TXdata As String)
+  If Sport.Status = Net.Inactive Then
+    RXdataPending = "ERR99"  ' indicates that the serial port is not opened.
+  Else
+    RXdataPending = ""
+    RXdata = ""
+    Print #Sport, (TXdata & Chr$(13));
+  End If
+End
+
+Public Sub SPort_Read()
+  Dim Answer As String
+  Read #Sport, Answer, Lof(Sport)
+  If Answer = Chr$(13) Then
+  RXdata = RXdataPending
+  RXdataPending = ""
+ Else
+  RXdataPending = RXdataPending & Answer
+ Endif
+End
+
+Public Sub Serial_Close()
+  If Sport.Status = Net.Active Then Close Sport
+End
+
+Public Sub TxRx(TX As String) As String
+  Dim Reply As String
+  Transmit(TX)
+  Wait 0.5     ' 0.02 is minimum
+  SPort_Read()
+  Reply = Left$(RXdataPending, 5)
+  If Reply = Null Then
+    reply = "ERR98"   ' indicates that there was no reply.
+  Endif
+  Return Reply
+End
+
+
+Public Sub TxRxFast(TX As String) As String
+  Dim reply As String = ""
+  Wait 0.02
+  Transmit(TX)
+  Wait 0.02
+  TimeOut = False
+  TimerOutSerial.Delay = 5000 ' 5 seconds
+  TimerOutSerial.Enabled = True
+  Do
+    SPort_Read()
+    Wait 0.001
+    reply = reply & RXdataPending
+  Loop Until (InStr(reply, Chr$(13)) > 0) Or TimeOut = True
+  reply = Left$(reply, 5)
+  If reply = Null Then
+  reply = "ERR98"   'indicates that there was no reply.
+  Endif
+  TimerOutSerial.Enabled = False
+  Return reply
+End
+
+Public Sub TxRxTimed(TX As String, MaxTime As Integer) As String
+  Dim reply As String = ""
+  Wait 0.02
+  Transmit(TX)
+  Wait 0.02
+  If (MaxTime < 1000) Then MaxTime = 1000
+  TimeOut = False
+  TimerOutSerial.Delay = MaxTime
+  TimerOutSerial.Enabled = True
+  Do
+    SPort_Read()
+    Wait 0.001
+    reply = reply & RXdataPending
+  Loop Until (InStr(reply, Chr$(13)) > 0) Or TimeOut = True
+  reply = Left$(reply, 5)
+  If reply = Null Then
+  reply = "ERR98"   'indicates that there was no reply.
+  Endif
+  TimerOutSerial.Enabled = False
+  Return reply
+End
+
+
+Public Sub TimerOutSerial_Timer()
+  TimerOutSerial.Enabled = False
+  TimeOut = True
+  MainAZC.NoGo = True
+  Print " time out !!"
+End

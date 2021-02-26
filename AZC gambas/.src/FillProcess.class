@@ -1,0 +1,245 @@
+' Gambas class file
+Public InputCount As Integer = 0
+Public StirCount As Integer = 0
+
+Public LastContainer As Boolean
+Public FillPending As Boolean
+Public FillDone As Boolean
+Public SampleTaken As Boolean
+Public ToStir As Integer
+Public ProcessReady As Boolean
+Public StartBowl As Boolean
+Public BowlInUse As Boolean
+Public BowlOnSpeed As Boolean
+Public StirPending As Boolean
+Public StirDone As Boolean
+Public FirstRun As Boolean
+
+Public BowlStarted As Boolean
+
+
+Public Sub GoForIt()
+  SerialHandler.TxRxFast(off.lamp_green)
+  InputCount = 0
+  StirCount = 0
+  LastContainer = False
+  FillPending = False
+  FillDone = False
+  SampleTaken = True
+  ToStir = 0
+  ProcessReady = False
+  StartBowl = False
+  BowlInUse = False
+  BowlOnSpeed = False
+  StirPending = False
+  StirDone = False
+  FirstRun = True
+  BowlStarted = False
+  
+  ' arm bowl start delay timer.
+  TimerBowlStartDelay.Delay = 10 * 1000 ' 10 sec
+  TimerBowlStartDelay.Enabled = True
+  
+  Do
+    Fill()
+    Wait 0.1
+    'BowlSpeedUp()
+    Wait 0.1
+     Stir()
+    Wait 0.1
+    ' Bowl()
+    Wait 0.1
+  Loop Until (LastContainer = True) And (ToStir = 0)
+  ' [GB2:KEYW] SerialHandler.TxRxFast(on.lamp_green)
+  SerialHandler.TxRxFast({On}.lamp_green)
+End
+
+Public Sub BowlSpeedUp()
+  If BowlStarted = True Then ' start timer elapsed.
+  
+  Endif
+  If BowlInUse Then Return
+  ' start up bowl
+  BowlInUse = True
+  BowlOnSpeed = False
+End
+
+
+Public Sub Stir()
+  If ToStir = 0 Then
+   Print "nothing to stir"
+   Return
+  Endif
+  Print "3 something to stir"
+  Print "stirpending = " & StirPending
+  If StirPending = True Then
+    If StirDone = False Then Return
+    'china: use serial control for stirrer:
+    Stirrer.SetRpm(Val(MainAZC.Var_Array[MainAZC.Stirrer_Low_Speed, MainAZC.Var_Ini]))    '
+    'SerialHandler.TxRxFast(off.stirrer_max)
+    If SampleTaken = False Then Return
+    If (CleanMachine.Stir_Pending = False) Then
+      'china: use serial control for stirrer:
+      Stirrer.SetRpm(0)    '
+      'SerialHandler.TxRxFast(off.stirrer)
+    Endif
+    'StirPending = FALSE
+    'StirDone = FALSE
+    'DEC ToStir
+    'IF Check.Stirrer_Lift() = "down" THEN 
+    '  SerialHandler.TxRxFast(on.stirrer_lift) ' lift up
+    '  DO
+        If (FillDone = True) Then
+          SerialHandler.TxRxFast(off.lamp_orange) ' watervale off
+        Endif
+     '   WAIT 0.1
+      'LOOP UNTIL Check.Stirrer_Lift() = "up"
+    'ENDIF 
+    'MainAZC.Stirrer_Dirty = FALSE   ' debug temporary.
+    CleanMachine.Stir(5)
+    Return
+  Else
+    Print " new start stir"
+    If Check.Input_Container_Stir() = "missing" Then
+      Print " error no container at fill"
+      Return   ' return error !!!
+    Endif
+    Print " dirty = "
+    Print MainAZC.Stirrer_Dirty
+    
+    If (MainAZC.Stirrer_Dirty = True) Then
+      ' clean stirrer
+      'CleanMachine.Stir(5)
+
+      Return
+    Endif
+    ' move to container
+    Print "move stir"
+    If Check.Stirrer_Rotate() = "clean" Then
+      If Check.Stirrer_Lift() = "down" Then
+        ' [GB2:KEYW] SerialHandler.TxRxFast(on.stirrer_lift) ' lift up
+        SerialHandler.TxRxFast({On}.stirrer_lift) ' lift up
+        Do
+          FillProcess.CheckFill()
+          Wait 0.2
+        Loop Until Check.Stirrer_Lift() = "up"
+      Endif
+      ' [GB2:KEYW] SerialHandler.TxRxFast(on.stirrer_rotate)
+      SerialHandler.TxRxFast({On}.stirrer_rotate)
+      Do
+        FillProcess.CheckFill()
+        Wait 0.2
+      Loop Until Check.Stirrer_Rotate() = "stir"
+    Endif
+    If (Check.Stirrer_Lift() = "up") Then
+      SerialHandler.TxRxFast(off.stirrer_lift) ' lift down
+      Do
+        FillProcess.CheckFill()
+        Wait 0.2
+      Loop Until Check.Stirrer_Lift() = "down"
+    Endif
+
+    Inc StirCount
+    'SerialHandler.TxRxFast(on.stirrer) 'china: do not switch it !!
+    'china: use serial control for stirrer:
+    Stirrer.SetRpm(Val(MainAZC.Var_Array[MainAZC.Stirrer_High_Speed, MainAZC.Var_Ini]))    '
+    'SerialHandler.TxRxFast(on.stirrer_max)
+    StirPending = True
+    StirDone = False
+    MainAZC.Stirrer_Dirty = True
+    TimerStir.Delay = 4000  'ms
+    TimerStir.Enabled = True
+    Return
+  Endif
+  
+End
+
+Public Sub Bowl()
+  
+  
+  
+End
+
+
+Public Sub Fill()
+  If LastContainer Then
+   Print " last container reached"
+   If (InputCount = StirCount) And (StirPending = False) Then ToStir = 0
+   Return
+  Endif
+  If FillPending Then
+    If (FillDone = False) Then
+     Print "."
+     Wait 0.5
+     Return
+    Endif
+    Wait 0.1
+    SerialHandler.TxRxFast(off.lamp_orange)  ' debug
+    Wait 0.5
+    If StirPending = True Then Return
+    If SampleTaken = False Then
+     Print ","
+     
+     Return
+    Endif
+    
+    
+'    IF InputCount = 8 THEN 
+    If InputCount = Val(MainAZC.Var_Array[MainAZC.Max_Input_Containers, MainAZC.Var_Ini]) Then 'china
+      LastContainer = 1
+    Else
+      ' move input
+      Search.Next_Input() ' to do: what is case of ....? is this full proof?
+    Endif
+    Inc ToStir
+    FillDone = False
+    FillPending = False
+  Else
+    If Check.Input_Container_Fill() = "missing" Then
+      LastContainer = 1
+      Print "no Container anymore"
+      Return
+    Else
+      Inc InputCount
+      FillPending = True
+      ' cmd to plc
+      ' [GB2:KEYW] SerialHandler.TxRxFast(on.lamp_orange)
+      SerialHandler.TxRxFast({On}.lamp_orange)
+      Print "1 start fill by plc"
+      FillDone = False
+      ' load timer
+      TimerFill.Delay = 4000
+      StartBowl = True
+      TimerFill.Enabled = True
+      Return
+    Endif
+  Endif
+  Return
+End
+
+
+Public Sub TimerFill_Timer()
+  TimerFill.Enabled = False
+  FillDone = True
+  'PRINT "2 fill done"
+End
+
+Public Sub TimerStir_Timer()
+
+  StirDone = True
+  TimerStir.Enabled = False
+  'PRINT "stir done time"
+    
+
+End
+
+Public Sub CheckFill()
+   If (FillDone = True) Then
+      SerialHandler.TxRxFast(off.lamp_orange) ' watervale off
+   Endif
+End
+
+Public Sub TimerBowlStartDelay_Timer()
+  TimerBowlStartDelay.Enabled = False
+  BowlStarted = True
+End

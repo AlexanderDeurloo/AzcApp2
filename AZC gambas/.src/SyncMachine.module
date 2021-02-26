@@ -1,0 +1,98 @@
+' Gambas module file
+
+Public Sub Go() As String
+  Dim reply As String
+  Dim Errors As Integer
+  Print "Synchronization started.."
+  Errors = Light_Tower()
+
+  If (MainAZC.StopProcess = 1) Then
+    Errors = 2
+    Print "Sync aborted by stop button"
+    Return Errors
+  Endif
+ 
+  Errors = Controls_To_Default()
+  
+  If (MainAZC.StopProcess = 1) Then
+    Errors = 2
+    Print "Sync aborted by stop button"
+    Return Errors
+  Endif
+  Return Errors
+End
+
+
+Public Sub Controls_To_Default() As Integer
+  Dim reply As String
+  Dim Errors As Integer = 0
+  reply = SerialHandler.TxRxFast(off.output_store_move)
+  reply = SerialHandler.TxRxFast(off.bowl_low_speed)
+  reply = SerialHandler.TxRxFast(off.freq_1)
+  reply = SerialHandler.TxRxFast(off.freq_2)
+  reply = SerialHandler.TxRxFast(off.high_pressure)
+  reply = SerialHandler.TxRxFast(off.water_valve_clean)
+  reply = SerialHandler.TxRxFast(off.water_valve_fill)
+  reply = SerialHandler.TxRxFast(off.water_valve_HP)
+  reply = SerialHandler.TxRxFast(off.water_valve_tube)
+  reply = SerialHandler.TxRxFast(off.pump_tube)
+  reply = SerialHandler.TxRxFast(off.kaoline_valve)
+  reply = SerialHandler.TxRxFast(off.magnesium_valve)
+  reply = SerialHandler.TxRxFast(off.sample_valve)
+
+  reply = SerialHandler.TxRxFast(off.input_store_rotate)  'china
+  reply = SerialHandler.TxRxFast(off.pump_magnesium)      'china
+
+  'use serial control FOR stirrer: 'china
+  Stirrer.SetRpm(0)    '
+  'reply = SerialHandler.TxRxFast(off.stirrer)
+  'reply = SerialHandler.TxRxFast(off.stirrer_max)
+
+  reply = SerialHandler.TxRxFast(off.output_store_rotate)
+  reply = SerialHandler.TxRxFast(off.drain_bowl)          'china: drain under bowl.
+'  reply = SerialHandler.TxRxFast(off.input_store_rotate)
+  If Check.Stirrer_Rotate() = "stir" Then
+    If Check.Stirrer_Lift() = "down" Then
+      ' [GB2:KEYW] SerialHandler.TxRxFast(on.stirrer_lift) ' lift up
+      SerialHandler.TxRxFast({On}.stirrer_lift) ' lift up
+      Do
+        Wait 0.1
+      Loop Until Check.Stirrer_Lift() = "up"
+    Endif
+    SerialHandler.TxRxFast(off.stirrer_rotate)
+    Do
+      Wait 0.1
+    Loop Until Check.Stirrer_Rotate() = "clean"
+  Endif
+  If Check.Stirrer_Lift() = "up" Then
+    SerialHandler.TxRxFast(off.stirrer_lift) ' lift down
+    Do
+      Wait 0.1
+    Loop Until Check.Stirrer_Lift() = "down"
+  Endif
+  Return Errors
+End
+
+
+Public Sub Light_Tower() As Integer
+  Dim reply As String
+  Dim Errors As Integer
+  ' [GB2:KEYW] reply = SerialHandler.TxRxFast(on.lamp_green)
+  reply = SerialHandler.TxRxFast({On}.lamp_green)
+  Print "green on"
+  Wait 0.1
+  ' [GB2:KEYW] reply = reply & SerialHandler.TxRxFast(on.lamp_orange)
+  reply = reply & SerialHandler.TxRxFast({On}.lamp_orange)
+  Print "orange on"
+  Wait 0.1
+  ' [GB2:KEYW] reply = reply & SerialHandler.TxRxFast(on.lamp_red)
+  reply = reply & SerialHandler.TxRxFast({On}.lamp_red)
+  Print "red on"
+  Wait 0.1
+  If (reply = "ERR00ERR00ERR00") Then
+    Errors = 0
+  Else
+    Errors = 1
+  Endif
+  Return Errors
+End
