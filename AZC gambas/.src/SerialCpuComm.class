@@ -5,14 +5,14 @@ Extern SerialTxRx(Devicename As String, DataTx As String, Reply As Pointer, Leng
 
 Public SerialPortCpu As String = ""
 
-Public Sub Init(SerialDevice As String)
+Public Sub Init(SerialDevice As String) As Integer
     If (SerialDevice == Null) 
       Print "Serial name for cpu comm is invalid"
-      Return
+      Return 1
     Endif
     Print "Serial name for cpu comm is " & SerialDevice
     SerialPortCpu = SerialDevice
-    Return
+    Return 0
 End
 
 

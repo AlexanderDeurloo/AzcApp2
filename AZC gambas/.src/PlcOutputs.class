@@ -1,0 +1,154 @@
+' Gambas class file
+
+Library "/home/pi/AzcApp/RevPi/libpiControlIf"
+
+Extern piControlWrite(a As Integer, b As Integer, c As Pointer)
+
+Public Mod30Addr70Data As Integer = 0
+Public Mod30Addr71Data As Integer = 0
+Public Mod31Addr183Data As Integer = 0
+Public Mod31Addr184Data As Integer = 0
+
+
+Public Sub Set(Pin As String, State As Integer)
+  
+  Dim DataA As Integer
+  Dim ModuleAddress As Integer
+  Dim PinAddr As Integer
+  
+  'ModuleAddress = Pin
+  'Mod31Data = Mod31Data Or Pin
+  'DataA = Mod31Data
+  
+  ' figure out which pin:
+  If Pin = "AirStirrerLiftRotateForward"
+    ModuleAddress = 70     ' 70 = mod30, first 8 pins
+    PinAddr = 1
+  Else If Pin = "AirStirrerLiftRotateBackward"
+    ModuleAddress = 70
+    PinAddr = 2
+  Else If Pin = "AirStirrerLiftUp"
+    ModuleAddress = 70
+    PinAddr = 4
+  Else If Pin = "AirStirrerLiftDown"
+    ModuleAddress = 70
+    PinAddr = 8
+  Else If Pin = "AirOutputMoveForward"
+    ModuleAddress = 70
+    PinAddr = 16
+  Else If Pin = "AirOutputMoveBackward"
+    ModuleAddress = 70
+    PinAddr = 32
+  Else If Pin = "AirOutputRotateOn"
+    ModuleAddress = 70
+    PinAddr = 64
+  Else If Pin = "AirOutputRotateOff"
+    ModuleAddress = 70
+    PinAddr = 128
+  Else If Pin = "AirBowlDrainForward"
+    ModuleAddress = 71         ' 71 = mod30, last 6 pins
+    PinAddr = 1
+  Else If Pin = "AirBowlDrainBackward"
+    ModuleAddress = 71
+    PinAddr = 2
+  Else If Pin = "AirTubeValveSample"
+    ModuleAddress = 71
+    PinAddr = 4
+  Else If Pin = "AirTubeValveMagnesium"
+    ModuleAddress = 71
+    PinAddr = 8
+  Else If Pin = "AirTubeValveKaoline"
+    ModuleAddress = 71
+    PinAddr = 16
+  Else If Pin = "AirBowlCooling"
+    ModuleAddress = 71
+    PinAddr = 32
+  Else If Pin = "TubePumpPower"
+    ModuleAddress = 183     ' 183 = mod31, first 8 pins
+    PinAddr = 1
+  Else If Pin = "StirrerPower"
+    ModuleAddress = 183
+    PinAddr = 2
+  Else If Pin = "WaterValveStirrerClean"
+    ModuleAddress = 183
+    PinAddr = 4
+  Else If Pin = "WaterValveSample"
+    ModuleAddress = 183
+    PinAddr = 8
+  Else If Pin = "WaterValvaHpPump"
+    ModuleAddress = 183
+    PinAddr = 16
+  Else If Pin = "InputMotor"
+    ModuleAddress = 183
+    PinAddr = 32
+  Else If Pin = "HpPumpPower"
+    ModuleAddress = 183
+    PinAddr = 64
+  Else If Pin = "KaolineMotorPower"
+    ModuleAddress = 183
+    PinAddr = 128
+  Else If Pin = "OutputSensorTeach"
+    ModuleAddress = 184     ' 184 = mod31, last 6 pins
+    PinAddr = 1
+  Else If Pin = "Spare1"
+    ModuleAddress = 184
+    PinAddr = 2
+  Else If Pin = "Spare2"
+    ModuleAddress = 184
+    PinAddr = 4
+  Else If Pin = "Spare3"
+    ModuleAddress = 184
+    PinAddr = 8
+  Else If Pin = "Spare4"
+    ModuleAddress = 184
+    PinAddr = 16
+  Else If Pin = "Spare5"
+    ModuleAddress = 184
+    PinAddr = 32
+  Else
+    Print "no valid input" 
+    Return
+  Endif
+  Print "moduleaddr: " & ModuleAddress & " pinadd " & PinAddr
+  ' update setting:
+  If State = 1
+    If ModuleAddress = 70
+      Mod30Addr70Data = Mod30Addr70Data Or PinAddr
+      DataA = Mod30Addr70Data
+    Else If ModuleAddress = 71
+      Mod30Addr71Data = Mod30Addr71Data Or PinAddr
+      DataA = Mod30Addr71Data
+    Else If ModuleAddress = 183
+      Mod31Addr183Data = Mod31Addr183Data Or PinAddr
+      DataA = Mod31Addr183Data
+    Else If ModuleAddress = 184
+      Mod31Addr184Data = Mod31Addr184Data Or PinAddr
+      DataA = Mod31Addr184Data
+    Else
+      Print "internal error in function PlcOutputs.Set"
+      Return
+    Endif
+  Else
+    If ModuleAddress = 70
+      Mod30Addr70Data = Mod30Addr70Data And (Not PinAddr)
+      DataA = Mod30Addr70Data
+    Else If ModuleAddress = 71
+      Mod30Addr71Data = Mod30Addr71Data And (Not PinAddr)
+      DataA = Mod30Addr71Data
+    Else If ModuleAddress = 183
+      Mod31Addr183Data = Mod31Addr183Data And (Not PinAddr)
+      DataA = Mod31Addr183Data
+    Else If ModuleAddress = 184
+      Mod31Addr184Data = Mod31Addr184Data And (Not PinAddr)
+      DataA = Mod31Addr184Data
+    Else
+      Print "internal error in function PlcOutputs.Set"
+      Return
+    Endif
+  Endif
+  Print "moduleaddr: " & ModuleAddress & " DataA " & DataA
+  
+  'send:
+  piControlWrite(ModuleAddress, 1, VarPtr(DataA))
+  Return
+End

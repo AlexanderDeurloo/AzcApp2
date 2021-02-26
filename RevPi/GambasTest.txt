@@ -1,0 +1,23 @@
+Library "/home/pi/TestCode/libpiControlIf"
+Extern piControlWrite(a As Integer, b As Integer, c As Pointer)
+
+Public Sub Main()
+  
+  Dim DataA As Integer
+  Dim i As Integer
+  Dim testIfDone As Integer = 1
+  
+  Print "Hello Alex, welcome back..."
+  
+  For i = 0 To 10
+    Print "Run " & i
+    DataA = 4
+    piControlWrite(183, 1, VarPtr(DataA))
+    Wait 0.5
+    
+    DataA = 0
+    piControlWrite(183, 1, VarPtr(DataA))
+    Wait 0.5
+
+  Next
+End

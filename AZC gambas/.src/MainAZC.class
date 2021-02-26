@@ -153,26 +153,23 @@ Public Sub Init_Machine() As Boolean
     Led.Control(Led_BowlClean, "busy")
     Led.Control(Led_StirrerClean, "busy")
     led.Control(Led_SystemError, "busy")
+    StatusBox.Text = "Plc ready..."
+    Wait 1
     Print "let's connect to plc"  ' debugger
-    'Print " which is " & Var_Array[CommPortPlc, Var_Ini] 'debugger
     ReceivedData = ""
-    
-    SerialCpuComm.Init(Var_Array[CommPortPlc, Var_Ini])
-
-   ' ReceivedData = SerialCpuComm.TxRxFast("")
-    'Print "we rec " & ReceivedData
-
+    If (SerialCpuComm.Init(Var_Array[CommPortPlc, Var_Ini]))
+      Print "Error in initializing serialcpu\n" 
+      Quit
+    Endif
 
     ReceivedData = SerialCpuComm.TxRxFast("PlcPresent")
-    Print "we rec " & ReceivedData
-    'ReceivedData = 
-    SerialCpuComm.TxRxFast("relay1off")
-    'Print "we rec " & ReceivedData
+    If Comp(ReceivedData, "CpuPresent")
+      Print "Cpu didn't reply properly: " & ReceivedData
+      Message.Error("No contact with PLC", "Stop")
+      Quit
+    Endif
+    StatusBox.Text = "Cpu ready..."
     Wait 1
-    ReceivedData = SerialCpuComm.TxRxFast("relay1on")
-    Print "we rec " & ReceivedData
-    form_Close() 'debugger
-    Quit
     
     
     'DumpI = SerialHandler.open_serial(Var_Array[CommPortPlc, Var_Ini])  '("/dev/ttyS0")
@@ -194,22 +191,24 @@ Public Sub Init_Machine() As Boolean
     ' [GB2:KEYW] ReceivedData = SerialHandler.TxRxFast(on.lamp_red)
     ' ReceivedData = SerialHandler.TxRxFast({On}.lamp_red)'debugger: turned off
     
-    SerialHandler.TxRxFast("PlcPresent\n") 'debugger
-    Wait 5 'debugger
-    Print "received after PlcPresent= " & ReceivedData 'debugger
-    ReceivedData = SerialHandler.TxRxFast("waterlevel?\n") 'debugger
-    Wait 1 'debugger
-    Print "received = " & ReceivedData 'debugger
-    form_Close() 'debugger
-    Wait 0.05
+    PlcOutputs.Set("StirrerPower", 1)
+    Wait 1
+    PlcOutputs.Set("InputMotor", 1)
+    Wait 1
+    PlcOutputs.Set("AirTubeValveSample", 1)
+    Wait 1
+     PlcOutputs.Set("AirTubeValveSample", 0)
+    Wait 1
+     PlcOutputs.Set("StirrerPower", 0)
+    Wait 1
+    PlcOutputs.Set("InputMotor", 0)
+    Wait 1
+   
+    StatusBox.Text = "Plc controlled..."
+    Wait 1
     Print " first tx done"
-    ' [GB2:KEYW] ReceivedData = ReceivedData & SerialHandler.TxRxFast(on.lamp_orange)
-    ReceivedData = ReceivedData & SerialHandler.TxRxFast({On}.lamp_orange)
-    Wait 0.05
-    ' [GB2:KEYW] ReceivedData = ReceivedData & SerialHandler.TxRxFast(on.lamp_green)
-    ReceivedData = ReceivedData & SerialHandler.TxRxFast({On}.lamp_green)
-    Wait 0.05
-    
+  Quit    
+  
     'china: TODO: switch stirrer on and init it.
     ' [GB2:KEYW] ReceivedData = ReceivedData & SerialHandler.TxRxFast(on.stirrer)  'china
     ReceivedData = ReceivedData & SerialHandler.TxRxFast({On}.stirrer)  'china

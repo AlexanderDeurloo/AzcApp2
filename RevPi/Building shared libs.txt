@@ -1,0 +1,3 @@
+How to compile a shared/dynamic library:
+
+gcc -shared -o libpiControlIf.so piControlIf.c
