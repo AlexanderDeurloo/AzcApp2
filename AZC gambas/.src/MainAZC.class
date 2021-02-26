@@ -154,30 +154,50 @@ Public Sub Init_Machine() As Boolean
     Led.Control(Led_StirrerClean, "busy")
     led.Control(Led_SystemError, "busy")
     Print "let's connect to plc"  ' debugger
-    Print " which is " & Var_Array[CommPortPlc, Var_Ini] 'debugger
+    'Print " which is " & Var_Array[CommPortPlc, Var_Ini] 'debugger
     ReceivedData = ""
-    DumpI = SerialHandler.open_serial(Var_Array[CommPortPlc, Var_Ini])  '("/dev/ttyS0")
-    Print "open_serial returncode = " & DumpI
-    If DumpI = 2 Then
-      Print "plc did not respond"
-      Message.Error("No contact with PLC", "Stop")
-      Quit
-    Else If DumpI = 1 Then
-      Print "open ok"
-    Else
-      Print "not able to open serial port"
-      Message.Error("No contact with PLC", "Stop")
-      Quit
-    Endif
+    
+    SerialCpuComm.Init(Var_Array[CommPortPlc, Var_Ini])
+
+   ' ReceivedData = SerialCpuComm.TxRxFast("")
+    'Print "we rec " & ReceivedData
+
+
+    ReceivedData = SerialCpuComm.TxRxFast("PlcPresent")
+    Print "we rec " & ReceivedData
+    'ReceivedData = 
+    SerialCpuComm.TxRxFast("relay1off")
+    'Print "we rec " & ReceivedData
+    Wait 1
+    ReceivedData = SerialCpuComm.TxRxFast("relay1on")
+    Print "we rec " & ReceivedData
+    form_Close() 'debugger
+    Quit
+    
+    
+    'DumpI = SerialHandler.open_serial(Var_Array[CommPortPlc, Var_Ini])  '("/dev/ttyS0")
+    'Print "open_serial returncode = " & DumpI
+    'If DumpI = 2 Then
+    '  Print "plc did not respond"
+    '  Message.Error("No contact with PLC", "Stop")
+    '  Quit
+    'Else If DumpI = 1 Then
+    '  Print "open ok"
+    'Else
+    '  Print "not able to open serial port"
+    '  Message.Error("No contact with PLC", "Stop")
+    '  Quit
+    'Endif
     
     ' TODO: add error handler: quit if open serial fails.
 '    PRINT " open ok"
     ' [GB2:KEYW] ReceivedData = SerialHandler.TxRxFast(on.lamp_red)
     ' ReceivedData = SerialHandler.TxRxFast({On}.lamp_red)'debugger: turned off
     
-    SerialHandler.TxRx("Dummy") 'debugger
-    Wait 1 'debugger
-    ReceivedData = SerialHandler.TxRx("waterlevel?") 'debugger
+    SerialHandler.TxRxFast("PlcPresent\n") 'debugger
+    Wait 5 'debugger
+    Print "received after PlcPresent= " & ReceivedData 'debugger
+    ReceivedData = SerialHandler.TxRxFast("waterlevel?\n") 'debugger
     Wait 1 'debugger
     Print "received = " & ReceivedData 'debugger
     form_Close() 'debugger

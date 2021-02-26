@@ -26,10 +26,10 @@ SearchString=True
 
 [OpenFile]
 Count=3
-File[1]=".src/MainAZC.form"
 Active=3
-File[2]=".src/MainAZC.class:37.179"
-File[3]=".src/Led.module:23.13"
+File[1]=".src/SerialHandler.class:0.6"
+File[2]=".src/MainAZC.class:33.6"
+File[3]=".src/SerialHandler.form"
 
 [Watches]
 Count=1

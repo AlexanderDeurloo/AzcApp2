@@ -1,0 +1,40 @@
+' Gambas class file
+
+Library "/home/pi/AzcApp/libSerial"
+Extern SerialTxRx(Devicename As String, DataTx As String, Reply As Pointer, Length As Integer) As Integer
+
+Public SerialPortCpu As String = ""
+
+Public Sub Init(SerialDevice As String)
+    If (SerialDevice == Null) 
+      Print "Serial name for cpu comm is invalid"
+      Return
+    Endif
+    Print "Serial name for cpu comm is " & SerialDevice
+    SerialPortCpu = SerialDevice
+    Return
+End
+
+
+Public Sub TxRxFast(Command As String) As String
+  Dim CommandToSend As String
+  Dim ReplyFromCpu As String = "12345678901234567890"
+  Dim bytecnt As Integer
+  If (SerialPortCpu == "")
+    Print "Error in TxRxFast: no serial port defined\n";
+    Return
+  Endif
+  
+  CommandToSend = Command
+  If (InStr(Command, "\n") == 0)
+    CommandToSend = CommandToSend & "\n"
+  Endif
+    
+  bytecnt = SerialTxRx(SerialPortCpu, CommandToSend, VarPtr(ReplyFromCpu), 20)
+  If (bytecnt > 1)
+    ReplyFromCpu = Left$(ReplyFromCpu, bytecnt - 1)
+  Endif
+  Return ReplyFromCpu
+  
+End
+

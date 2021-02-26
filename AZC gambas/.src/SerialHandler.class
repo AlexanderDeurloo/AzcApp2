@@ -35,11 +35,12 @@ Public Sub Open_Serial(NamePort As String) As Integer
     Loop Until retry = 100
     
     
-    Wait 2
-    'DumpS = TxRxFast("\n")  ' send a linefeed without command. plc responce with err98
+    Wait 5
+    Transmit("\n")  ' send a linefeed without command. plc responce with err98
     'If DumpS = "ERR98" Then
     '  Return 2  ' no reply from PLC
     'Else
+      Wait 0.5
       Return 1  ' plc replied
     'Endif
   Else
@@ -77,7 +78,7 @@ Public Sub TxRx(TX As String) As String
   Transmit(TX)
   Wait 0.5     ' 0.02 is minimum
   SPort_Read()
-  Reply = Left$(RXdataPending, 5)
+  'Reply = Left$(RXdataPending, 5)
   If Reply = Null Then
     reply = "ERR98"   ' indicates that there was no reply.
   Endif
@@ -98,9 +99,9 @@ Public Sub TxRxFast(TX As String) As String
     Wait 0.001
     reply = reply & RXdataPending
   Loop Until (InStr(reply, Chr$(13)) > 0) Or TimeOut = True
-  reply = Left$(reply, 5)
+  reply = Left$(reply, 15)
   If reply = Null Then
-  reply = "ERR98"   'indicates that there was no reply.
+     reply = "ERR98"   'indicates that there was no reply.
   Endif
   TimerOutSerial.Enabled = False
   Return reply
@@ -120,7 +121,7 @@ Public Sub TxRxTimed(TX As String, MaxTime As Integer) As String
     Wait 0.001
     reply = reply & RXdataPending
   Loop Until (InStr(reply, Chr$(13)) > 0) Or TimeOut = True
-  reply = Left$(reply, 5)
+  'reply = Left$(reply, 5)
   If reply = Null Then
   reply = "ERR98"   'indicates that there was no reply.
   Endif
