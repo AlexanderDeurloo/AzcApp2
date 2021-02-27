@@ -1,4 +1,5 @@
 ' Gambas class file
+
 Public Kaoline_Clean_Pending As Boolean = False
 Public Bowl_Clean_Pending As Boolean = False
 Public Tube_Clean_Pending As Boolean = False
@@ -47,44 +48,36 @@ End
 
 Public Sub Stirrer_Setup(cleanTime As Integer)
   ' check position
+  ' TODO: what if the position is ERR? Can we make a function that corrects it in a safe way?
   If Check.Stirrer_Rotate() = "stir" Then
     If Check.Stirrer_Lift() = "down" Then
-      ' [GB2:KEYW] SerialHandler.TxRxFast(on.stirrer_lift) ' lift up
-      SerialHandler.TxRxFast({On}.stirrer_lift) ' lift up
+      PlcOutputs.StirrerLift("up") ' lift up
       Do
         FillProcess.CheckFill()
         Wait 0.1
       Loop Until Check.Stirrer_Lift() = "up"
     Endif
-    SerialHandler.TxRxFast(off.stirrer_rotate)
+      PlcOutputs.StirrerRotate("clean") ' move to clean position
     Do
         FillProcess.CheckFill()
         Wait 0.1
     Loop Until Check.Stirrer_Rotate() = "clean"
   Endif
   If Check.Stirrer_Lift() = "up" Then
-    SerialHandler.TxRxFast(off.stirrer_lift) ' lift down
+    PlcOutputs.StirrerLift("down") ' lift down
     Do
         FillProcess.CheckFill()
         Wait 0.1
     Loop Until Check.Stirrer_Lift() = "down"
   Endif
-  'china: use serial control for stirrer:
   Stirrer.SetRpm(Val(MainAZC.Var_Array[MainAZC.Stirrer_Low_Speed, MainAZC.Var_Ini]))    '
-  ' stirrer is on position now.
-  'SerialHandler.TxRxFast(off.stirrer_max)       ' stir slow speed
-  'WAIT 0.1
-  'SerialHandler.TxRxFast(on.stirrer)            ' stir on
-
+  ' stirrer is in clean position now.
   Wait 0.1
-  ' [GB2:KEYW] SerialHandler.TxRxFast(on.water_valve_clean)  ' water in clean centre
-  SerialHandler.TxRxFast({On}.water_valve_clean)  ' water in clean centre
+    PlcOutputs.Set("WaterValveStirrerClean", 1)
   Wait 0.1
-  ' [GB2:KEYW] SerialHandler.TxRxFast(on.sample_valve)       ' sample tube
-  SerialHandler.TxRxFast({On}.sample_valve)       ' sample tube
+    PlcOutputs.Set("AirTubeValveSample", 1)
   Wait 0.1
-  ' [GB2:KEYW] SerialHandler.TxRxFast(on.water_valve_tube)   ' clean tube with water
-  SerialHandler.TxRxFast({On}.water_valve_tube)   ' clean tube with water
+    PlcOutputs.Set("WaterValveTubes", 1)
   TimerStirClean.Enabled = False
   TimerStirClean.Delay = cleanTime 'ms
   TimerStirClean.Enabled = True
@@ -95,19 +88,18 @@ End
 Public Sub TimerStirClean_Timer()
   TimerStirClean.Enabled = False
   Stir_Clean_Pending = False
-  Print "stir cleaN TIMER END"
+  Print "stir clean TIMER END"
 End
 
 
 Public Sub Stirrer_Stop()
-  SerialHandler.TxRxFast(off.water_valve_tube)
+    PlcOutputs.Set("WaterValveTubes", 0)
   Wait 0.1
-  SerialHandler.TxRxFast(off.sample_valve)
+    PlcOutputs.Set("AirTubeValveSample", 0)
   Wait 0.1
-  SerialHandler.TxRxFast(off.water_valve_clean)
+    PlcOutputs.Set("WaterValveStirrerClean", 0)
   Wait 0.1
-  'SerialHandler.TxRxFast(off.stirrer)
-  Stirrer.SetRpm(0)  'china: use serial control for stirrer
+  Stirrer.SetRpm(0)  'use serial control for stirrer
   Wait 0.1
 End
 
@@ -142,9 +134,11 @@ Public Sub Bowl_Setup()
   Loop Until (Stir_Clean_Pending = False)
   Print "stir is ready, bowl can continue"
   Print "freq1 off"
-  Print SerialHandler.TxRxFast(off.freq_1)  ' safety
+  'Print SerialHandler.TxRxFast(off.freq_1)  ' safety
+  ' TODO: freq control via RS485 !!!
   Print "freq 2 off"
-  Print SerialHandler.TxRxFast(off.freq_2)  ' safety
+  'Print SerialHandler.TxRxFast(off.freq_2)  ' safety
+  ' TODO: freq control via RS485 !!!
   Print "wait until bowl stopped(simple timer)"
   Do
     Wait 0.1
@@ -153,15 +147,17 @@ Public Sub Bowl_Setup()
   
   Print "make output store position is off"
   If Check.Output_Store_Move() = "on" Then
-    SerialHandler.TxRxFast(off.output_store_move)
+    PlcOutputs.OutputStoreMove("rest")
+    'SerialHandler.TxRxFast(off.output_store_move)
     Do
      Wait 0.1
     Loop Until Check.Output_Store_Move() = "off"
   Endif
 
-  Print "make drain_bowl position off (which should be under bowl)"  'china: move it under bowl
+  Print "make drain_bowl position under bowl"  'china: move it under bowl
   If Check.Drain_Bowl_Position() = "on" Then
-    SerialHandler.TxRxFast(off.drain_bowl)
+    PlcOutputs.BowlDrain("underbowl")
+    'SerialHandler.TxRxFast(off.drain_bowl)
     Do
      Wait 0.1
     Loop Until Check.Drain_Bowl_Position() = "off"
@@ -171,46 +167,42 @@ Public Sub Bowl_Setup()
   Print "bowl ls"
   ' bowl slow speed
   If MainAZC.StopProcess = 1 Then Goto finish
-  ' [GB2:KEYW] Print SerialHandler.TxRxFast(on.bowl_low_speed)
-  Print SerialHandler.TxRxFast({On}.bowl_low_speed)
+  ' TODO: freq control via RS485 for slow speed
+  'Print SerialHandler.TxRxFast({On}.bowl_low_speed)
   Wait 0.5
   ' kaoline clean moment
   Print "clean kaoline tube"
-  ' [GB2:KEYW] SerialHandler.TxRxFast(on.kaoline_valve)  ' open kaoline valve.
-  SerialHandler.TxRxFast({On}.kaoline_valve)  ' open kaoline valve.
+  PlcOutputs.Set("AirTubeValveKaoline", 1)
   Kaoline_Clean_Pending = True
   TimerKaolineClean.Delay = TimeTable.Kaoline_Valve_Clean_Time
   TimerKaolineClean.Enabled = True
-  ' [GB2:KEYW] SerialHandler.TxRxFast(on.water_valve_tube)      ' push kaoline back with clean water
-  SerialHandler.TxRxFast({On}.water_valve_tube)      ' push kaoline back with clean water
+  PlcOutputs.Set("WaterValveTubes", 1)      ' push kaoline back with clean water
   Do
     Wait 0.001
     If MainAZC.StopProcess = 1 Then Goto finish
   Loop Until Kaoline_Clean_Pending = False    ' wait for kaoline time.
-  SerialHandler.TxRxFast(off.water_valve_tube)
-  SerialHandler.TxRxFast(off.kaoline_valve)
+  Wait 0.1
+  PlcOutputs.Set("WaterValveTubes", 0)
+  Wait 0.1
+  PlcOutputs.Set("AirTubeValveKaoline", 0)
   Wait 1
   Print " do the bowl clean procedure"
   Tube_Clean_Pending = True
-  ' [GB2:KEYW] SerialHandler.TxRxFast(on.water_valve_tube)
-  SerialHandler.TxRxFast({On}.water_valve_tube)
-  ' [GB2:KEYW] SerialHandler.TxRxFast(on.pump_tube)
-  SerialHandler.TxRxFast({On}.pump_tube)
+  PlcOutputs.Set("WaterValveTubes", 1)
+  PlcOutputs.Set("TubePumpPower", 1)
   TimerCleanTube.Delay = TimeTable.Tube_Clean
   TimerCleanTube.Enabled = True
   Do
     Wait 0.01
     If MainAZC.StopProcess = 1 Then Goto finish
   Loop Until Tube_Clean_Pending = False
-  SerialHandler.TxRxFast(off.water_valve_tube)
-  SerialHandler.TxRxFast(off.pump_tube)
+  PlcOutputs.Set("WaterValveTubes", 0)
+  PlcOutputs.Set("TubePumpPower", 0)
 
   Wait 0.5
-  ' [GB2:KEYW] SerialHandler.TxRxFast(on.water_valve_HP)
-  SerialHandler.TxRxFast({On}.water_valve_HP)
+  PlcOutputs.Set("WaterValveHpPump", 1)
   Wait 1
-  ' [GB2:KEYW] SerialHandler.TxRxFast(on.high_pressure)
-  SerialHandler.TxRxFast({On}.high_pressure)
+  PlcOutputs.Set("HpPumpPower", 1)
   TimerBowlClean.Delay = TimeTable.Bowl_Clean_Phase1_Time 'ms
   TimerBowlClean.Enabled = True
   Print "timer bowl phase1 started..." & CStr(TimeTable.Bowl_Clean_Phase1_Time) & "msec"
@@ -218,8 +210,7 @@ Public Sub Bowl_Setup()
     Wait 0.1
     If MainAZC.StopProcess = 1 Then Goto finish
   Loop Until Bowl_Clean_Pending = False
-  SerialHandler.TxRxFast(off.high_pressure)
-  'SerialHandler.TxRxFast(off.water_valve_HP) ' new: to allow buffer to fill
+  PlcOutputs.Set("HpPumpPower", 0)
   Bowl_Clean_Pending = True
   TimerBowlClean.Delay = TimeTable.Bowl_Clean_Phase2_Time 'ms
   TimerBowlClean.Enabled = True
@@ -229,10 +220,8 @@ Public Sub Bowl_Setup()
     If MainAZC.StopProcess = 1 Then Goto finish
   Loop Until Bowl_Clean_Pending = False
   
-  ' [GB2:KEYW] SerialHandler.TxRxFast(on.water_valve_HP)
-  SerialHandler.TxRxFast({On}.water_valve_HP)
-  ' [GB2:KEYW] SerialHandler.TxRxFast(on.high_pressure)
-  SerialHandler.TxRxFast({On}.high_pressure)
+  PlcOutputs.Set("WaterValveHpPump", 1)
+  PlcOutputs.Set("HpPumpPower", 1)
   Bowl_Clean_Pending = True
   TimerBowlClean.Delay = TimeTable.Bowl_Clean_Phase3_Time 'ms
   TimerBowlClean.Enabled = True
@@ -246,6 +235,10 @@ Public Sub Bowl_Setup()
   MainAZC.Bowl_Dirty = False
   MainAZC.update_leds()
 finish:
+  PlcOutputs.Set("AirTubeValveKaoline", 0)
+  PlcOutputs.Set("WaterValveTubes", 0)
+  PlcOutputs.Set("TubePumpPower", 0)
+  PlcOutputs.Set("HpPumpPower", 0)
   Return
 End
 
@@ -253,11 +246,10 @@ End
 
 
 Public Sub Bowl_Stop()
-  SerialHandler.TxRxFast(off.high_pressure)
+  PlcOutputs.Set("HpPumpPower", 0)
   Wait 0.2
-  'SerialHandler.TxRxFast(off.water_valve_HP) ' new: allow buffer to fill
-  Wait 0.2
-  SerialHandler.TxRxFast(off.bowl_low_speed)
+  ' TODO: freq control via RS485 !!!!!
+  'SerialHandler.TxRxFast(off.bowl_low_speed)
   Print "bowl is clean and all related ctrls are off"
   Return
 End

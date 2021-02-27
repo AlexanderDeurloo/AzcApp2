@@ -68,7 +68,7 @@ Public Sub Set(Pin As String, State As Integer)
   Else If Pin = "WaterValveStirrerClean"
     ModuleAddress = 183
     PinAddr = 4
-  Else If Pin = "WaterValveSample"
+  Else If Pin = "WaterValveTubes"
     ModuleAddress = 183
     PinAddr = 8
   Else If Pin = "WaterValveHpPump"
@@ -148,3 +148,80 @@ Public Sub Set(Pin As String, State As Integer)
   piControlWrite(ModuleAddress, 1, VarPtr(DataA))
   Return
 End
+
+
+Public Sub StirrerLift(NewPosition As String) As Integer
+  If Comp(NewPosition, "up") == 0
+    PlcOutputs.Set("AirStirrerLiftDown", 0)
+    PlcOutputs.Set("AirStirrerLiftUp", 1)
+  Else If Comp(NewPosition, "down") == 0
+    PlcOutputs.Set("AirStirrerLiftUp", 0)
+    PlcOutputs.Set("AirStirrerLiftDown", 1)
+  Else
+    Print "Invalid option in PlcOutput.StirrerLift :" & NewPosition
+    Return 1
+  Endif
+  Return 0
+End
+
+
+Public Sub StirrerRotate(NewPosition As String) As Integer
+  If Comp(NewPosition, "stir") == 0
+    PlcOutputs.Set("AirStirrerLiftRotateBackward", 0)
+    PlcOutputs.Set("AirStirrerLiftRotateForward", 1)
+  Else If Comp(NewPosition, "clean") == 0
+    PlcOutputs.Set("AirStirrerLiftRotateForward", 0)
+    PlcOutputs.Set("AirStirrerLiftRotateBackward", 1)
+  Else
+    Print "Invalid option in PlcOutput.StirrerRotate :" & NewPosition
+    Return 1
+  Endif
+  Return 0
+End
+
+
+
+Public Sub OutputStoreMove(NewPosition As String) As Integer
+  If Comp(NewPosition, "sample") == 0
+    PlcOutputs.Set("AirOutputMoveBackward", 0)
+    PlcOutputs.Set("AirOutputMoveForward", 1)
+  Else If Comp(NewPosition, "rest") == 0
+    PlcOutputs.Set("AirOutputMoveForward", 0)
+    PlcOutputs.Set("AirOutputMoveBackward", 1)
+  Else
+    Print "Invalid option in PlcOutput.OutputStoreMove :" & NewPosition
+    Return 1
+  Endif
+  Return 0
+End
+
+Public Sub OutputStoreRotate(NewPosition As String) As Integer
+  If Comp(NewPosition, "on") == 0
+    PlcOutputs.Set("AirOutputRotateOff", 0)
+    PlcOutputs.Set("AirOutputRotateOn", 1)
+  Else If Comp(NewPosition, "off") == 0
+    PlcOutputs.Set("AirOutputRotateOn", 0)
+    PlcOutputs.Set("AirOutputRotateOff", 1)
+  Else
+    Print "Invalid option in PlcOutput.OutputStoreRotate :" & NewPosition
+    Return 1
+  Endif
+  Return 0
+End
+
+
+
+Public Sub BowlDrain(NewPosition As String) As Integer
+  If Comp(NewPosition, "underbowl") == 0
+    PlcOutputs.Set("AirBowlDrainBackward", 0)
+    PlcOutputs.Set("AirBowlDrainForward", 1)
+  Else If Comp(NewPosition, "awayfrombowl") == 0
+    PlcOutputs.Set("AirBowlDrainForward", 0)
+    PlcOutputs.Set("AirBowlDrainBackward", 1)
+  Else
+    Print "Invalid option in PlcOutput.BowlDrain :" & NewPosition
+    Return 1
+  Endif
+  Return 0
+End
+

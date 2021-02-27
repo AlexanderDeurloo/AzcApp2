@@ -28,13 +28,14 @@ SearchComment=False
 SearchString=True
 
 [OpenFile]
-Count=5
-Active=1
-File[1]=".src/MainAZC.class:9.240"
+Count=6
+Active=4
+File[1]=".src/MainAZC.class:37.171"
 File[2]=".src/Check.module:30.251"
 File[3]=".src/PlcInputs.class:32.43"
-File[4]=".src/SerialCpuComm.class:63.20"
-File[5]=".src/FillProcess.class:0.2"
+File[4]=".src/CleanMachine.class:45.251"
+File[5]=".src/PlcOutputs.class:23.80"
+File[6]=".src/Stirrer.class:0.0"
 
 [Watches]
 Count=1
