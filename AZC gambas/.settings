@@ -28,14 +28,19 @@ SearchComment=False
 SearchString=True
 
 [OpenFile]
-Count=6
-Active=6
-File[1]=".src/MainAZC.class:13.240"
+Count=11
+Active=11
+File[1]=".src/MainAZC.class:16.147"
 File[2]=".src/Check.module:16.15"
 File[3]=".src/PlcInputs.class:30.55"
 File[4]=".src/PlcOutputs.class:28.197"
-File[5]=".src/MainAZC.form"
-File[6]=".src/Search.module:7.127"
+File[5]=".src/Stirrer.class:25.110"
+File[6]=".src/SyncMachine.module:0.25"
+File[7]=".src/ProcessCTRL.form"
+File[8]=".src/ProcessCTRL.class:0.137"
+File[9]=".src/FillProcess.class:18.121"
+File[10]=".src/StirProcess.class:16.19"
+File[11]=".src/SerialHandler.class:0.62"
 
 [Watches]
 Count=1

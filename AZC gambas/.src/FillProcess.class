@@ -119,13 +119,13 @@ Public Sub Stir()
     Print "move stir"
     If Check.Stirrer_Rotate() = "clean" Then
       If Check.Stirrer_Lift() = "down" Then
-        SerialCpuComm.StirrerLift("up")
+        PlcOutputs.StirrerLift("up")
         Do
           FillProcess.CheckFill()
           Wait 0.2
         Loop Until Check.Stirrer_Lift() = "up"
       Endif
-      SerialCpuComm.StirrerRotate("stir")
+      PlcOutputs.StirrerRotate("stir")
       'SerialHandler.TxRxFast({On}.stirrer_rotate)
       Do
         FillProcess.CheckFill()
@@ -133,7 +133,7 @@ Public Sub Stir()
       Loop Until Check.Stirrer_Rotate() = "stir"
     Endif
     If (Check.Stirrer_Lift() = "up") Then
-      SerialCpuComm.StirrerLift("down")
+      PlcOutputs.StirrerLift("down")
       'SerialHandler.TxRxFast(off.stirrer_lift) ' lift down
       Do
         FillProcess.CheckFill()

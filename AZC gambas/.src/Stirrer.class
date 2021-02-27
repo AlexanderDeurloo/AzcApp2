@@ -2,11 +2,7 @@
 
 
 Public ReadReady As Integer
-' [GB2:ARRD] Public RecBytes As Byte[10]
 Public RecBytes As New Byte[10]
-
-' SetRpm(RPM.Value)
-' SerialOpenStirrer("/dev/ttyS4")
 
 
 
@@ -91,11 +87,10 @@ End
 
 
 
-Public Sub SetRpm(RPM As Integer) As Integer
-  ' [GB2:ARRD] Dim StirrerData As Byte[7]
+Public Sub SetRpm(RpmSetting As Integer) As Integer
   Dim StirrerData As New Byte[7]
   Dim checksum As Integer
-  If RPM < 100 Then RPM = 0
+  If RpmSetting < 100 Then RpmSetting = 0
   StirrerData[0] = &hFE
   StirrerData[1] = &hA1 'get status
   StirrerData[2] = 0
@@ -116,11 +111,11 @@ Public Sub SetRpm(RPM As Integer) As Integer
     StirrerData[5] = &hB1
     Transmit(StirrerData)
   Endif
-  'send required RPM:
+  'send required RpmSetting:
   StirrerData[0] = &hFE
   StirrerData[1] = &hB1
-  StirrerData[2] = (Shr(RPM, 8)) And 255
-  StirrerData[3] = RPM And 255
+  StirrerData[2] = (Shr(RpmSetting, 8)) And 255
+  StirrerData[3] = RpmSetting And 255
   StirrerData[4] = &h00
   'checksum:
   checksum = (StirrerData[1] + StirrerData[2] + StirrerData[3] + StirrerData[4]) And 255

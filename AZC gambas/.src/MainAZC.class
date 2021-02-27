@@ -95,7 +95,8 @@ Public Sub form_Close()
  ' StatusBox.Text = "shutting down..."
   StatusBox.Text = "Closing program..."
   PlcOutputs.Set("WaterValveHpPump", 0) 
-  
+  PlcOutputs.Set("AirBowlCooling", 0)
+
   'SerialHandler.serial_close()
   Wait 0.5
   Stirrer.SerialCloseStirrer()  'china
@@ -141,7 +142,7 @@ End
 
 
 Public Sub Init_Machine() As Boolean
-    Dim i As Integer
+    'Dim i As Integer
     ' link to PLC
     Dim fillcmd As String
     Led.Control(Led_MagLevel, "busy")
@@ -228,6 +229,10 @@ Public Sub Init_Machine() As Boolean
     'CTRL_Progress_Timer(True)
     'ReceivedData = SerialHandler.TxRxFast(fillcmd)
     Wait 0.5                        'china
+    PlcOutputs.Set("AirBowlCooling", 1)
+    Wait 0.5
+    PlcOutputs.Set("KaolineMotorPower", 1)
+
     'fillcmd = {On}.input_store_next_TimeOut & (Var_Array[Timeout_Input_Store_Rotate, Var_Ini]) 'china
     'ReceivedData = SerialHandler.TxRxFast(fillcmd)  'china
     'ReceivedData = SerialCpuComm.TxRxFast(fillcmd)
@@ -240,7 +245,7 @@ Public Sub Init_Machine() As Boolean
     '  Print Check.TubeValve_Kaoline()
     '  Wait 2
     'Next
-    Print Search.Output_Container() 'debugger
+    'Print Search.Output_Container() 'debugger
 End
 
 
