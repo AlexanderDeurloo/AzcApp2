@@ -182,7 +182,7 @@ End
 
 
 Public Sub OutputStoreMove(NewPosition As String) As Integer
-  If Comp(NewPosition, "sample") == 0
+  If Comp(NewPosition, "capture") == 0
     PlcOutputs.Set("AirOutputMoveBackward", 0)
     PlcOutputs.Set("AirOutputMoveForward", 1)
   Else If Comp(NewPosition, "rest") == 0

@@ -1,4 +1,5 @@
 ' Gambas class file
+
 Public Input_Container As Boolean = True    ' debug to avoid placing containers everytime
 Public Stir_Ready As Boolean
 Public Bowl_On_Speed As Boolean
@@ -35,8 +36,8 @@ Public Sub Go()
   If MainAZC.Stirrer_Dirty = True Then
     Print "hela, stirrer is dirty"
     MainAZC.StatusText("Cleaning Stirrer before use...")
-    ' [GB2:KEYW] SerialHandler.TxRxFast(on.lamp_red)
-    SerialHandler.TxRxFast({On}.lamp_red)
+    'TODO: lamps
+    'SerialHandler.TxRxFast({On}.lamp_red)
     CleanMachine.Stir_Clean_Setup = False
     CleanMachine.Stir(TimeTable.Stirrer_Clean_Time)
     MainAZC.update_leds()
@@ -48,15 +49,16 @@ Public Sub Go()
   If MainAZC.Bowl_Dirty = True Then
     Print "hela, bowl is dirty"
     MainAZC.StatusText("Cleaning Bowl before use...")
-    ' [GB2:KEYW] SerialHandler.TxRxFast(on.lamp_red)
-    SerialHandler.TxRxFast({On}.lamp_red)
+    'TODO: lamps
+    'SerialHandler.TxRxFast({On}.lamp_red)
     Bowl_Stopped = True
     CleanMachine.All(False)
   Endif
   
   MainAZC.update_leds()
   Startup_clean = False   ' to avoid recleaning every hit of "play"
-  SerialHandler.TxRxFast(off.lamp_red)
+  'TODO: lamps
+  'SerialHandler.TxRxFast(off.lamp_red)
 
   If MainAZC.StopProcess = 1 Then Goto finish
   Bowl_Delay = TimeTable.Stir_Time - TimeTable.Motor_ACC
@@ -128,19 +130,20 @@ finish:
 End
 
 
-Public Sub Fill_Input() As Integer ' TODO: to be expanded with timeout capture and action. Now it can be an infinite loop in case of a defect somewere.
+Public Sub Fill_Input() As Integer ' TODO: to be expanded with timeout capture and action. Now it can be an infinite loop in case of a defect somewhere.
   Dim returncode As Integer
   returncode = 1
-  Print "fill1" & Check.Fill_Status()
-  ' [GB2:KEYW] Print SerialHandler.TxRxFast(on.water_valve_fill) ' = "fill"
-  Print SerialHandler.TxRxFast({On}.water_valve_fill) ' = "fill"
-  Print "fill2" & Check.Fill_Status()
+  
+  SerialCpuComm.TxRxFast("waterfillstop")
+  Print "before fill: " & Check.Fill_Status()
+  SerialCpuComm.TxRxFast("waterfillstart")
+  Print "fill started: " & Check.Fill_Status()
   Wait 0.5
   MainAZC.StatusText("Applying water to input container...")
   Do
     Wait 1
     If MainAZC.StopProcess = 1 Then Goto finish
-    Print "fillx" & Check.Fill_Status()
+    Print "during fill: " & Check.Fill_Status()
     If (Check.Fill_Status() = "timeout") Then
       Print "water fill timeout."
       Goto finish
@@ -148,7 +151,7 @@ Public Sub Fill_Input() As Integer ' TODO: to be expanded with timeout capture a
   Loop Until Check.Fill_Status() = "done"
   returncode = 0
 finish:
-  SerialHandler.TxRxFast(off.water_valve_fill) ' just for safety
+  SerialCpuComm.TxRxFast("waterfillstop") ' just for safety
   MainAZC.StatusText("Water fill done.")
   Wait 2  ' allow last drops to fall.
   Return returncode
@@ -167,10 +170,8 @@ Public Sub Start_Stir()
   MainAZC.StatusText("Move stirrer and start it...")
   TimerStir.Delay = TimeTable.Stir_Time '3000  'debug
   StirProcess.MoveStir("stir")
-  'SerialHandler.TxRxFast(on.stirrer)
-  'china: use serial control for stirrer:
+  'use serial control for stirrer:
   Stirrer.SetRpm(Val(MainAZC.Var_Array[MainAZC.Stirrer_High_Speed, MainAZC.Var_Ini]))    '
-  'SerialHandler.TxRxFast(on.stirrer_max)
   Stir_Ready = False
   TimerStir.Enabled = True
 End
@@ -186,10 +187,8 @@ Public Sub Start_Bowl()
   
  
   TimerBowlSpeedup.Delay = TimeTable.Motor_ACC ' 10000
-  ' [GB2:KEYW] SerialHandler.TxRxFast(on.freq_1)
-  SerialHandler.TxRxFast({On}.freq_1)
-  ' [GB2:KEYW] SerialHandler.TxRxFast(on.freq_2)
-  SerialHandler.TxRxFast({On}.freq_2)
+  ' TODO: freq control via RS485 !!!!!
+  'SerialHandler.TxRxFast({On}.freq_1)
   Bowl_Running = True
   Bowl_On_Speed = False
   TimerBowlSpeedup.Enabled = True
@@ -205,9 +204,8 @@ finish:
 End
 
 Public Sub Stir_Slow()
-  'china: use serial control for stirrer:
+  'use serial control for stirrer:
   Stirrer.SetRpm(Val(MainAZC.Var_Array[MainAZC.Stirrer_Low_Speed, MainAZC.Var_Ini]))    '
-  'SerialHandler.TxRxFast(off.stirrer_max)
   Wait 2  ' debug
 End
 
@@ -223,80 +221,88 @@ Public Sub Fill_Bowl()
   ' fill magn (no pump required)
   MainAZC.StatusText("Fill bowl...")
   Magn_Done = False
-  ' [GB2:KEYW] SerialHandler.TxRxFast(on.magnesium_valve)
-  SerialHandler.TxRxFast({On}.magnesium_valve)
+  PlcOutputs.Set("AirTubeValveMagnesium", 1)
+  'SerialHandler.TxRxFast({On}.magnesium_valve)
   Wait 0.5  'china
-  ' [GB2:KEYW] SerialHandler.TxRxFast(on.pump_magnesium)  'china
-  SerialHandler.TxRxFast({On}.pump_magnesium)  'china
+  PlcOutputs.Set("TubePumpPower", 1)
+  'SerialHandler.TxRxFast({On}.pump_magnesium)  'china
   TimerMagn.Delay = TimeTable.Magnesium_Fill_Time ' 3000  ' debug
   TimerMagn.Enabled = True
   Do
     Wait 0.1
     If MainAZC.StopProcess = 1 Then Goto finish
   Loop Until Magn_Done = True
-  SerialHandler.TxRxFast(off.pump_magnesium)  'china
+  PlcOutputs.Set("TubePumpPower", 0)
+  'SerialHandler.TxRxFast(off.pump_magnesium)  'china
   Wait 0.5  'china
-  SerialHandler.TxRxFast(off.magnesium_valve)
+  PlcOutputs.Set("AirTubeValveMagnesium", 0)
+  'SerialHandler.TxRxFast(off.magnesium_valve)
   Wait 0.5
   ' fill water (pump required)
   Water_Done = False
-  ' [GB2:KEYW] SerialHandler.TxRxFast(on.water_valve_tube)
-  SerialHandler.TxRxFast({On}.water_valve_tube)
-  ' [GB2:KEYW] SerialHandler.TxRxFast(on.pump_tube)
-  SerialHandler.TxRxFast({On}.pump_tube)
+  PlcOutputs.Set("WaterValveTubes", 1)
+  'SerialHandler.TxRxFast({On}.water_valve_tube)
+  PlcOutputs.Set("TubePumpPower", 1)
+  'SerialHandler.TxRxFast({On}.pump_tube)
   TimerWater.delay = TimeTable.Bowl_Water_Fill_Time '5000  ' debug
   TimerWater.Enabled = True
   Do
     Wait 0.1
     If MainAZC.StopProcess = 1 Then Goto finish
   Loop Until Water_Done = True
-  SerialHandler.TxRxFast(off.water_valve_tube)
-  SerialHandler.TxRxFast(off.pump_tube)
+  PlcOutputs.Set("WaterValveTubes", 0)
+  'SerialHandler.TxRxFast(off.water_valve_tube)
+  PlcOutputs.Set("TubePumpPower", 0)
+  'SerialHandler.TxRxFast(off.pump_tube)
   Wait 1
   ' fill sample
   Sample_Done = False
-  ' [GB2:KEYW] SerialHandler.TxRxFast(on.sample_valve)
-  SerialHandler.TxRxFast({On}.sample_valve)
-  ' [GB2:KEYW] SerialHandler.TxRxFast(on.pump_tube)
-  SerialHandler.TxRxFast({On}.pump_tube)
+  PlcOutputs.Set("AirTubeValveSample", 1)
+  'SerialHandler.TxRxFast({On}.sample_valve)
+  PlcOutputs.Set("TubePumpPower", 1)
+  'SerialHandler.TxRxFast({On}.pump_tube)
   TimerSample.Delay = TimeTable.Sample_Time '10000 ' debug
   TimerSample.Enabled = True
   Do
     Wait 0.1
     If MainAZC.StopProcess = 1 Then Goto finish
   Loop Until Sample_Done = True
-  SerialHandler.TxRxFast(off.sample_valve)
-  SerialHandler.TxRxFast(off.pump_tube)
+  PlcOutputs.Set("AirTubeValveSample", 0)
+  'SerialHandler.TxRxFast(off.sample_valve)
+  PlcOutputs.Set("TubePumpPower", 0)
+  'SerialHandler.TxRxFast(off.pump_tube)
   Wait 1
   ' fill kaoline
   Kaoline_Done = False
-  ' [GB2:KEYW] SerialHandler.TxRxFast(on.kaoline_valve)
-  SerialHandler.TxRxFast({On}.kaoline_valve)
-  ' [GB2:KEYW] SerialHandler.TxRxFast(on.pump_tube)
-  SerialHandler.TxRxFast({On}.pump_tube)
+  PlcOutputs.Set("AirTubeValveKaoline", 1)
+  'SerialHandler.TxRxFast({On}.kaoline_valve)
+  PlcOutputs.Set("TubePumpPower", 1)
+  'SerialHandler.TxRxFast({On}.pump_tube)
   TimerKaoline.Delay = TimeTable.Kaoline_Fill_Time '10000 ' debug
   Timerkaoline.Enabled = True
   Do
     Wait 0.1
     If MainAZC.StopProcess = 1 Then Goto finish
   Loop Until Kaoline_Done = True
-  SerialHandler.TxRxFast(off.kaoline_valve)
-'extra: clean tube with water. 230913:
-  ' [GB2:KEYW] SerialHandler.TxRxFast(on.water_valve_tube)
-  SerialHandler.TxRxFast({On}.water_valve_tube)
+  PlcOutputs.Set("AirTubeValveKaoline", 0)
+  'SerialHandler.TxRxFast(off.kaoline_valve)
+'extra: clean tube TO BOWL with water:
+  PlcOutputs.Set("WaterValveTubes", 1)
+  'SerialHandler.TxRxFast({On}.water_valve_tube)
   Wait 5
 finish:
-  SerialHandler.TxRxFast(off.water_valve_tube)
-  SerialHandler.TxRxFast(off.kaoline_valve)
-  SerialHandler.TxRxFast(off.pump_tube)
+  PlcOutputs.Set("AirTubeValveMagnesium", 0)
+  PlcOutputs.Set("WaterValveTubes", 0)
+  PlcOutputs.Set("AirTubeValveKaoline", 0)
+  PlcOutputs.Set("TubePumpPower", 0)
+  PlcOutputs.Set("AirTubeValveSample", 0)
   Wait 1
 End
 
 Public Sub Stop_Stir()
-  'china: use serial control for stirrer:
+  'use serial control for stirrer:
   MainAZC.StatusText("Stop stirrer and move to clean centre...")
   Stirrer.SetRpm(0)    '
-  'SerialHandler.TxRxFast(off.stirrer)
   StirProcess.MoveStir("clean")
   CleanMachine.Stir(TimeTable.Stirrer_Clean_Time)
   MainAZC.update_leds()
@@ -319,30 +325,32 @@ End
 Public Sub Move_Output(position As String)
   If position = "capture" Then
     MainAZC.StatusText("Move output store to capture position...")
-    'china: move drain away:
-    ' [GB2:KEYW] SerialHandler.TxRxFast(on.drain_bowl)          'china
-    SerialHandler.TxRxFast({On}.drain_bowl)          'china
+    'move drain away:
+    PlcOutputs.BowlDrain("awayfrombowl")
+    'SerialHandler.TxRxFast({On}.drain_bowl)
     Do
       Wait 0.1
-    Loop Until Check.Drain_Bowl_Position() = "on"  'china
+    Loop Until Check.Drain_Bowl_Position() = "on"
 
-    ' [GB2:KEYW] SerialHandler.TxRxFast(on.output_store_move)
-    SerialHandler.TxRxFast({On}.output_store_move)
+    PlcOutputs.OutputStoreMove("capture")
+    'SerialHandler.TxRxFast({On}.output_store_move)
     Do
       Wait 0.1
     Loop Until Check.Output_Store_Move() = "on"
   Else If position = "rest" Then
     MainAZC.StatusText("Move output store away...")
-    SerialHandler.TxRxFast(off.output_store_move)
+    PlcOutputs.OutputStoreMove("rest")
+    'SerialHandler.TxRxFast(off.output_store_move)
     Do
       Wait 0.1
     Loop Until Check.Output_Store_Move() = "off"
 
-    'china: move drain back under bowl:
-    SerialHandler.TxRxFast(off.drain_bowl)           'china
+    'move drain back under bowl:
+    PlcOutputs.BowlDrain("underbowl")
+    'SerialHandler.TxRxFast(off.drain_bowl)
     Do
       Wait 0.1
-    Loop Until Check.Drain_Bowl_Position() = "off"  'china
+    Loop Until Check.Drain_Bowl_Position() = "off"
 
   Endif
   Wait 1  ' psyco wait.
@@ -350,8 +358,9 @@ End
 
 Public Sub Stop_Bowl()
   MainAZC.StatusText("Stop bowl...")
-  SerialHandler.TxRxFast(off.freq_1)
-  SerialHandler.TxRxFast(off.freq_2)
+  ' TODO: freq control via RS485 !!!
+  'SerialHandler.TxRxFast(off.freq_1)
+  'SerialHandler.TxRxFast(off.freq_2)
   Bowl_Stopped = False
   TimerBowlSlowDown.delay = TimeTable.Motor_DEC ' 20000 ' debug. time is equal to "DEC" parameter in freq inverters.
   TimerBowlSlowDown.Enabled = True
@@ -377,10 +386,10 @@ End
 
 Public Sub Stop_All()
   Print " knock all down"
-  ' [GB2:KEYW] SerialHandler.TxRx(on.lamp_red)
-  SerialHandler.TxRx({On}.lamp_red)
-  SerialHandler.TxRx(off.lamp_green)
-  SerialHandler.TxRx(off.lamp_orange)
+  ' TODO: lamps
+  'SerialHandler.TxRx({On}.lamp_red)
+  'SerialHandler.TxRx(off.lamp_green)
+  'SerialHandler.TxRx(off.lamp_orange)
   SyncMachine.Controls_To_Default()
   
   If Bowl_Running = True
