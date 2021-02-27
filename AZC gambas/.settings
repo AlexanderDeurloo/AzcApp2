@@ -28,18 +28,14 @@ SearchComment=False
 SearchString=True
 
 [OpenFile]
-Count=10
-Active=1
-File[1]=".src/MainAZC.class:0.476"
+Count=6
+Active=6
+File[1]=".src/MainAZC.class:13.240"
 File[2]=".src/Check.module:16.15"
-File[3]=".src/PlcInputs.class:16.30"
-File[4]=".src/PlcOutputs.class:33.73"
-File[5]=".src/Stirrer.class:0.0"
-File[6]=".src/ProcessInterruption.module:0.3"
-File[7]=".src/Progress.module:29.13"
-File[8]=".src/Led.module:21.4"
-File[9]=".src/MainAZC.form"
-File[10]="Project description:20.15"
+File[3]=".src/PlcInputs.class:30.55"
+File[4]=".src/PlcOutputs.class:28.197"
+File[5]=".src/MainAZC.form"
+File[6]=".src/Search.module:7.127"
 
 [Watches]
 Count=1

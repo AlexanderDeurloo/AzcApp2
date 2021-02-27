@@ -1,41 +1,63 @@
 ' Gambas module file
-Public Sub Next_Input()
-'   SerialHandler.TxRx(on.input_store_rotate)
-    MainAZC.StatusText("Find next input container...")
-    ' [GB2:KEYW] SerialHandler.TxRxTimed(on.input_store_next, 20000) 'china
-    SerialHandler.TxRxTimed({On}.input_store_next, 20000) 'china
+
+Public Sub Next_Input() As Integer
+  Dim TimeOutCnt As Integer = 50   '0.1 x 50 = 5 sec
+  
+  MainAZC.StatusText("Find next input container...")
+  PlcOutputs.Set("InputMotor", 1)
+  If (PlcInputs.Read("InputPosition") = 1)  ' if sitting on switch nicely:
     Do
       Wait 0.1
       If MainAZC.StopProcess = 1 Then Goto finish
-'    LOOP UNTIL Check.Input_Store_Move() = "on"
-    Loop Until Check.Input_Store_Position() = "on" 'china
-    Wait 0.5
-    SerialHandler.TxRx(off.input_store_rotate)  'not really needed.
-'    DO
-'      WAIT 0.1
-'      IF MainAZC.StopProcess = 1 THEN GOTO finish
-'    LOOP UNTIL Check.Input_Store_Move() = "off"
-'    LOOP UNTIL Check.Input_Store_Position() = "off" 'china
-    Wait 0.5
+      If TimeOutCnt
+        TimeOutCnt = TimeOutCnt - 1
+      Else
+        Print "Timeout in Next_Input, waiting for switch to go OFF"
+        PlcOutputs.Set("InputMotor", 0)
+        Return 1
+      Endif
+    Loop Until PlcInputs.Read("InputPosition") = 0  ' wait for switch to go off
+  Endif
+
+  TimeoutCnt = 50
+  Do
+    Wait 0.1
+    If MainAZC.StopProcess = 1 Then Goto finish
+    If TimeOutCnt
+      TimeOutCnt = TimeOutCnt - 1
+    Else
+      Print "Timeout in Next_Input, waiting for switch to go ON"
+      PlcOutputs.Set("InputMotor", 0)
+      Return 2
+    Endif
+  Loop Until PlcInputs.Read("InputPosition") = 1  ' wait for switch to go ON
+
 finish:
+  PlcOutputs.Set("InputMotor", 0)
+  Wait 0.5
+  Return 0
 End
 
-Public Sub Next_Output()
-    MainAZC.StatusText("Find next output container...")
-    ' [GB2:KEYW] SerialHandler.TxRx(on.output_store_rotate)
-    SerialHandler.TxRx({On}.output_store_rotate)
+
+
+Public Sub Next_Output() As Integer
+    MainAZC.StatusText("Move output store one position...")
+    PlcOutputs.OutputStoreRotate("on")
+    'SerialHandler.TxRx({On}.output_store_rotate)
     Do
       Wait 0.1
       If MainAZC.StopProcess = 1 Then Goto finish
     Loop Until Check.output_store_rotate() = "on"
     Wait 0.5
-    SerialHandler.TxRx(off.Output_store_rotate)
+    PlcOutputs.OutputStoreRotate("off")
+    'SerialHandler.TxRx(off.Output_store_rotate)
     Do
       Wait 0.1
       If MainAZC.StopProcess = 1 Then Goto finish
     Loop Until Check.Output_Store_Rotate() = "off"
     Wait 0.5
 finish:
+  Return 0
 End
 
 
@@ -43,35 +65,36 @@ Public Sub Input_Container() As String
   Dim Errorcode As String = "ERR"
   Dim i As Integer
   
-    MainAZC.StatusText("Find input container...")
+  MainAZC.StatusText("Check for input container...")
   
-  'FOR i = 1 TO 8 STEP 1
-   For i = 1 To Val(MainAZC.Var_Array[MainAZC.Max_Input_Containers, MainAZC.Var_Ini]) Step 1  'china
+  For i = 1 To Val(MainAZC.Var_Array[MainAZC.Max_Input_Containers, MainAZC.Var_Ini]) Step 1
     If Check.Input_Container_Fill() = "present" Then
-      Errorcode = "Found"
+      Errorcode = "Found on position " & i
+      Break ' no need to look any further. Go to exit
+    Endif
+    Print "Nothing found. Go to next position: " & CStr(i + 1)
+    If Next_Input() <> 0
+      ErrorCode = "TimeOut"
       Break
     Endif
-    Print "input_store_next command..."
 '    SerialHandler.TxRx(on.input_store_rotate)
-    ' [GB2:KEYW] SerialHandler.TxRxTimed(on.input_store_next, 20000) 'china
-    SerialHandler.TxRxTimed({On}.input_store_next, 20000) 'china
-    Print "next done"
-    Do
-      Wait 0.1
-      Print "check position (?)"
-      If MainAZC.StopProcess = 1 Then Goto finish
-'   LOOP UNTIL Check.Input_Store_Move() = "on"
-    Loop Until Check.Input_Store_Position() = "on"  'china
-    Wait 0.5
-    Print "motor off "
-    SerialHandler.TxRx(off.input_store_rotate)  'china: not really required.
+    'SerialHandler.TxRxTimed({On}.input_store_next, 20000)
+    Print "set on next position"
+    'Do
+    '  Wait 0.1
+    '  Print "check position (?)"
+    '  If MainAZC.StopProcess = 1 Then Goto finish
+    'Loop Until Check.Input_Store_Position() = "on"
+    'Wait 0.5
+    'Print "motor off "
+    'SerialHandler.TxRx(off.input_store_rotate)  'not really required.
    ' DO
      ' WAIT 0.1
     '  IF MainAZC.StopProcess = 1 THEN GOTO finish
 '    LOOP UNTIL Check.Input_Store_Move() = "off"
    ' LOOP UNTIL Check.Input_Store_Position() = "off" 'china
     Wait 0.5
-    Print "next done"
+    'Print "next done"
   Next
 finish:
   If MainAZC.StopProcess = 1 Then Return "search cancelled"
@@ -82,28 +105,31 @@ End
 Public Sub Output_Container() As String
   Dim Errorcode As String = "ERR"
   Dim i As Integer
+  'Dim Next As Integer
   
-   MainAZC.StatusText("Find output container...")
+  MainAZC.StatusText("Find output container...")
   
-  'FOR i = 1 TO 8 STEP 1
-    For i = 1 To Val(MainAZC.Var_Array[MainAZC.Max_Input_Containers, MainAZC.Var_Ini]) Step 1 'china
+  For i = 1 To Val(MainAZC.Var_Array[MainAZC.Max_Input_Containers, MainAZC.Var_Ini]) Step 1
     If Check.Output_Container() = "present" Then
-      Errorcode = "Found"
+      Errorcode = "Found at position: " & i
       Break
     Endif
-    ' [GB2:KEYW] SerialHandler.TxRxFast(on.output_store_rotate)
-    SerialHandler.TxRxFast({On}.output_store_rotate)
-    Do
-      Wait 0.1
-      If MainAZC.StopProcess = 1 Then Goto finish
-    Loop Until Check.Output_Store_Rotate() = "on"
-    Wait 0.5
-    SerialHandler.TxRxFast(off.output_store_rotate)
-    Do
-      Wait 0.1
-      If MainAZC.StopProcess = 1 Then Goto finish
-    Loop Until Check.Output_Store_Rotate() = "off"
-    Wait 0.5
+    If MainAZC.StopProcess = 1 Then Goto finish
+    'Next = i + 1
+    Print "Move to next position: " & CStr(i + 1)
+    Next_Output()
+'    SerialHandler.TxRxFast({On}.output_store_rotate)
+'    Do
+ '     Wait 0.1
+  '    If MainAZC.StopProcess = 1 Then Goto finish
+   ' Loop Until Check.Output_Store_Rotate() = "on"
+    'Wait 0.5
+'    SerialHandler.TxRxFast(off.output_store_rotate)
+ '   Do
+  '    Wait 0.1
+   '   If MainAZC.StopProcess = 1 Then Goto finish
+ '   Loop Until Check.Output_Store_Rotate() = "off"
+     Wait 0.5
   Next
 finish:
   If MainAZC.StopProcess = 1 Then Return "search cancelled"

@@ -240,11 +240,13 @@ Public Sub Init_Machine() As Boolean
     '  Print Check.TubeValve_Kaoline()
     '  Wait 2
     'Next
+    Print Search.Output_Container() 'debugger
 End
 
 
 Public Sub Process_Start()
     Dim i As Integer
+    Dim Reply As String
     StopProcess = 0
     Print "Process start"
     StatusText("Checking levels..")
@@ -285,12 +287,17 @@ Public Sub Process_Start()
     Print "still processing "
     ' search for input container
     StatusText("Looking for containers..")
-    If Search.Input_Container() = "ERR" Then
+    Reply = Search.Input_Container()
+    If Reply = "ERR" Then
       'SerialHandler.TxRxFast({On}.lamp_red)
       Message.Error("No container at input detected")
       'SerialHandler.TxRxFast(off.lamp_red)
       'SerialHandler.TxRxFast(off.lamp_orange)
       'SerialHandler.TxRxFast({On}.lamp_green)
+      Goto Finish   ' was return
+    Else If Reply = "TimeOut" Then
+      'SerialHandler.TxRxFast({On}.lamp_red)
+      Message.Error("Timeout during input container search")
       Goto Finish   ' was return
     Endif
     If StopProcess = 1 Then Goto finish

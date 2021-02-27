@@ -159,7 +159,7 @@ End
 
 Public Sub Rotate_Input()
   Input_Container = False
-  Search.Next_Input()
+  Search.Next_Input() ' TODO: check return code
   If Check.Input_Container_Fill() = "present" Then Input_Container = True
 End
 
