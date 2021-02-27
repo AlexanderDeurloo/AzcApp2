@@ -2,7 +2,7 @@
 
 'PUBLIC LevelBit AS Boolean
 Public Protect As Boolean
-Public starttime As Date
+Public starttime As Float
 Public overalltime As Integer
 Public Time_Correction As Integer
 Public NoGo As Boolean
@@ -224,7 +224,8 @@ Public Sub Init_Machine() As Boolean
     fillcmd = "waterfilltimeout " & (Var_Array[Timeout_Water_Fill_Valve, Var_Ini])
     ReceivedData = SerialCpuComm.TxRxFast(fillcmd)
     Print ReceivedData
-    
+    'ProgressElapsedTimer.Enabled = True 'debugger
+    'CTRL_Progress_Timer(True)
     'ReceivedData = SerialHandler.TxRxFast(fillcmd)
     Wait 0.5                        'china
     'fillcmd = {On}.input_store_next_TimeOut & (Var_Array[Timeout_Input_Store_Rotate, Var_Ini]) 'china
@@ -308,7 +309,8 @@ Public Sub Process_Start()
     
 
   Processes.Text = 0    ' reset counter
-  Progress.Display(BarArea, 0)
+  'Progress.Display(BarArea, 0)
+  ProgressBar1.Value = 0
   ProcessCTRL.Go()
  
 Finish:
@@ -423,7 +425,9 @@ Public Sub Set_To_Stop()    ' buttons related
   StopButton.ToolTip = ""
   ProgressElapsedTimer.Enabled = False
   StatusBox.Text = "STOPPED"
-  Progress.Display(BarArea, 0)
+  'Progress.Display(BarArea, 0)
+  
+  ProgressBar1.Value = 0
 End
 
 
@@ -467,16 +471,18 @@ Public Sub Menu_Recipes_Unlock_Click()   ' arms timer. On expire the leds are dr
 End
 
 Public Sub ProgressElapsedTimer_Timer()
-
   Dim elapsed As Integer
-  Dim currenttime As Date
-  currenttime = Now()
-  elapsed = DateDiff(starttime, currenttime, gb.Second) / overalltime * 100
-  Progress.Display(BarArea, elapsed)
+  Dim currenttime As Float
+  currenttime = Timer()
+  elapsed = currenttime - starttime
+  'elapsed = DateDiff(starttime, currenttime, gb.Second) / overalltime * 100
+  'Progress.Display(BarArea, elapsed)
+  ProgressBar1.Value = elapsed / 100
+  Print "elapsed = " & elapsed 'debugger
 End
 
 Public Sub CTRL_Progress_Timer(state As Boolean)
-  starttime = Now()
+  starttime = Timer()
   ProgressElapsedTimer.Enabled = state
 End
 
@@ -615,7 +621,8 @@ End
 Public Sub MainDelay_Timer() ' used to create event. Otherwise I didn't succeed to draw the leds at start.
   MainDelay.Enabled = False
   DrawLeds()
-  Progress.Display(BarArea, 0)
+'  Progress.Display(BarArea, 0)
+  ProgressBar1.Value = 0
   Init_Machine()
 End
 

@@ -1,5 +1,9 @@
 ' Gambas module file
 
+'
+'     O B S O L E T E ! ! ! ! 
+'
+
 Public Function Display(Bar As DrawingArea, progr As Integer)
   
   'void

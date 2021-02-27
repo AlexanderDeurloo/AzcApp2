@@ -52,6 +52,11 @@
   { Panel1 Panel
     MoveScaled(4,24,102,53)
     Background = &H00FF80&
+    { ProgressBar1 ProgressBar
+      MoveScaled(2,34,97,4)
+      Background = Color.LightGray
+      Label = False
+    }
   }
   { L_StirTime Label
     MoveScaled(112,13,37,7)
@@ -108,10 +113,6 @@
   { StopButton Button
     MoveScaled(66,27,16,16)
     Picture = Picture["stop.png"]
-  }
-  { BarArea DrawingArea
-    MoveScaled(6,58,97,4)
-    Cached = True
   }
   { Processes TextBox
     MoveScaled(49,65,9,4)
@@ -304,7 +305,7 @@
     }
   }
   { MainDelay #Timer
-    #MoveScaled(1,1)
+    #MoveScaled(8,0)
     Delay = 9
   }
 }
