@@ -1,4 +1,4 @@
-1# /bin/bash
+#! /bin/bash
 
 echo 'build a shared lib for serial cpu communication...'
 

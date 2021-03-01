@@ -4,6 +4,7 @@
 #include <termios.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <sys/ioctl.h>
 
 int fd = 0;
 
@@ -95,7 +96,7 @@ int SerialTx(char *Command, size_t CommandSize)
         return -1;
 }
 
-int SerialOpen(char *PortName, int speed, int parity, int Blocking)
+int SerialOpen(char *PortName, int speed, int parity, int Blocking, int reset)
 {
         if (PortName == NULL) return -1;
         fd = open (PortName, O_RDWR | O_NOCTTY | O_SYNC);
@@ -107,7 +108,14 @@ int SerialOpen(char *PortName, int speed, int parity, int Blocking)
 
         set_interface_attribs (fd, speed, parity);  // set speed to 115,200 bps, 8n1 (no parity)
         set_blocking (fd, Blocking);                // set blocking
- 
+        if(reset)
+        {
+            int DtrFlag;
+            DtrFlag = TIOCM_DTR;
+            ioctl(fd,TIOCMBIS,&DtrFlag);
+            sleep(1);
+            ioctl(fd,TIOCMBIC,&DtrFlag);
+        }
         return 0;
         
 }
@@ -129,7 +137,7 @@ int SerialTxRx(char *portname, char *DataToSend, char *Result, size_t ResultLeng
         if(Result==NULL) return -3;
         if ( (Blocking < 0) || (Blocking > 1) ) Blocking = 1;
         
-        if (SerialOpen(portname,B4800,0,Blocking))
+        if (SerialOpen(portname,B4800,0,Blocking,0))
         {
            printf("Error opening serial\n");
            return -4;
@@ -156,7 +164,7 @@ int SerialTxStirrer(char *portname, unsigned char *DataToSend, size_t Bytes)
         if(portname==NULL) return -1;
         if(DataToSend==NULL) return -2;
 
-        if (SerialOpen(portname,B9600,0,0)) // no blocking
+        if (SerialOpen(portname,B9600,0,0,0)) // no blocking
         {
            printf("Error opening serial\n");
            return -3;

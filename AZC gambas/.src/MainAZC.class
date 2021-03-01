@@ -168,7 +168,11 @@ Public Sub Init_Machine() As Boolean
       ReceivedData = SerialCpuComm.TxRxFast("PlcPresent", 0)
       If Comp(ReceivedData, "CpuPresent") <> 0
         Print "Cpu didn't reply properly: " & ReceivedData
-        StatusBox.Text = "Cpu retry..."
+        StatusBox.Text = "Cpu reset..."
+        Wait 1
+        Print "Reset CPU..."
+          SerialCpuComm.Reset("/dev/ttyACM0")
+        Print "reset done."
         Wait 1
         ReceivedData = SerialCpuComm.TxRxFast("PlcPresent", 1)
         If Comp(ReceivedData, "CpuPresent") <> 0
@@ -191,6 +195,7 @@ Public Sub Init_Machine() As Boolean
    
     Print " first tx done"
   
+
     PlcOutputs.Set("StirrerPower", 1)
   
   ' TODO TODO !!!
