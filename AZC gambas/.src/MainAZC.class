@@ -152,47 +152,58 @@ Public Sub Init_Machine() As Boolean
     led.Control(Led_SystemError, "busy")
     StatusBox.Text = "Plc ready..."
     Wait 1
-    Print "let's connect to plc"  ' debugger
+    Print "let's connect to Cpu"  ' debugger
     ReceivedData = ""
     If (SerialCpuComm.Init(Var_Array[CommPortPlc, Var_Ini]))
       Print "Error in initializing serialcpu\n" 
       Quit
     Endif
 
-    ReceivedData = SerialCpuComm.TxRxFast("PlcPresent")
-    If Comp(ReceivedData, "CpuPresent")
+    ReceivedData = SerialCpuComm.TxRxFast("PlcPresent", 0)
+    If Comp(ReceivedData, "CpuPresent") <> 0
       Print "Cpu didn't reply properly: " & ReceivedData
-      Message.Error("No contact with Cpu", "Stop")
+      ' give it another shot:
+      StatusBox.Text = "Cpu pending..."
+      Wait 1
+      ReceivedData = SerialCpuComm.TxRxFast("PlcPresent", 0)
+      If Comp(ReceivedData, "CpuPresent") <> 0
+        Print "Cpu didn't reply properly: " & ReceivedData
+        StatusBox.Text = "Cpu retry..."
+        Wait 1
+        ReceivedData = SerialCpuComm.TxRxFast("PlcPresent", 1)
+        If Comp(ReceivedData, "CpuPresent") <> 0
+          Message.Error("No contact with Cpu", "Stop")
+          Quit
+        Endif
+      Endif
+    Endif
+    Wait 1
+    ReceivedData = SerialCpuComm.TxRxFast("PlcPresent", 1)
+    If Comp(ReceivedData, "CpuPresent") <> 0
+      Message.Error("No proper contact with Cpu", "Stop")
       Quit
     Endif
+    Print "Cpu replied properly: " & ReceivedData
     StatusBox.Text = "Cpu ready..."
+    SerialCpuComm.TxRxFast("blue", 1)
+    SerialCpuComm.TxRxFast("blinkon", 1)
     Wait 1
    
     Print " first tx done"
   
     PlcOutputs.Set("StirrerPower", 1)
+  
   ' TODO TODO !!!
     Wait 0.05
     'Stirrer.SerialOpenStirrer(Var_Array[CommPortStirrer, Var_Ini])   '("/dev/ttyS4") 'china
-    'ReceivedData = ReceivedData & SerialHandler.TxRxFast(off.lamp_red)
-    'Wait 0.05
-    'ReceivedData = ReceivedData & SerialHandler.TxRxFast(off.lamp_orange)
-    'Wait 0.05
-    'ReceivedData = ReceivedData & SerialHandler.TxRxFast(off.lamp_green)
-    'If ReceivedData = ("ERR00ERR00ERR00ERR00ERR00ERR00ERR00")  ' 7 x ERR0 means 7 x expected reply : PLC ready.
-      StatusBox.Text = "Machine ready"
-      StartButton.Enabled = True
-      led.Control(Led_SystemError, "off")
-    'Else
-    '  StatusBox.Text = "no connection with PLC"
-    '  Print "received: " & ReceivedData
-    '  Led.Control(Led_SystemError, "error")
-    '  Wait 3
-    '  form_Close()
-    'Endif
+
+    StatusBox.Text = "Stirrer ready"
+    StartButton.Enabled = True
+    led.Control(Led_SystemError, "off")
+
     nogo = False
     
-      'Print PlcInputs.Read("AirStirrerLiftRotateBackward")
+    'Print PlcInputs.Read("AirStirrerLiftRotateBackward")
     
     If (PlcInputs.Read("MagnesiumLevel") = 1) Then Led.Control(Led_MagLevel, "on")
     If (PlcInputs.Read("KaolineLevel") = 1) Then Led.Control(Led_KaolineLevel, "on")
@@ -215,37 +226,29 @@ Public Sub Init_Machine() As Boolean
       Led.Control(Led_BowlClean, "error")
       Led.Control(Led_StirrerClean, "error")
     Endif
-    Wait 0.5
-    'ReceivedData = SerialHandler.TxRxFast({On}.lamp_green)
-    Set_To_Stop()
-    StatusBox.Text = "Machine ready"
-    Wait 0.5
+    Wait 1
     PlcOutputs.Set("WaterValveHpPump", 1) ' since water buffer of HP can be empty at startup
     ' generate command for PLC to inform about the waterfill timeout.
     fillcmd = "waterfilltimeout " & (Var_Array[Timeout_Water_Fill_Valve, Var_Ini])
-    ReceivedData = SerialCpuComm.TxRxFast(fillcmd)
+    ReceivedData = SerialCpuComm.TxRxFast(fillcmd, 1)
     Print ReceivedData
-    'ProgressElapsedTimer.Enabled = True 'debugger
-    'CTRL_Progress_Timer(True)
-    'ReceivedData = SerialHandler.TxRxFast(fillcmd)
-    Wait 0.5                        'china
+
+    Wait 1           
     PlcOutputs.Set("AirBowlCooling", 1)
-    Wait 0.5
+    Wait 1
     PlcOutputs.Set("KaolineMotorPower", 1)
 
-    'fillcmd = {On}.input_store_next_TimeOut & (Var_Array[Timeout_Input_Store_Rotate, Var_Ini]) 'china
-    'ReceivedData = SerialHandler.TxRxFast(fillcmd)  'china
-    'ReceivedData = SerialCpuComm.TxRxFast(fillcmd)
-    'print ReceivedData
     
-    'SerialCpuComm.TxRxFast("waterfillstop")
-    'Print Check.Fill_Status()
-    'SerialCpuComm.TxRxFast("waterfillstart")
     'For i = 0 To i + 14
     '  Print Check.TubeValve_Kaoline()
     '  Wait 2
     'Next
     'Print Search.Output_Container() 'debugger
+    Wait 1
+    SerialCpuComm.TxRxFast("blinkoff", 1)
+    Set_To_Stop()
+    StatusBox.Text = "Machine ready"
+
 End
 
 
@@ -254,18 +257,17 @@ Public Sub Process_Start()
     Dim Reply As String
     StopProcess = 0
     Print "Process start"
+    SerialCpuComm.TxRxFast("green", 1)
+    Wait 1
     StatusText("Checking levels..")
-    'SerialHandler.TxRxFast(off.lamp_green)
-    'SerialHandler.TxRxFast(off.lamp_orange)
-    'SerialHandler.TxRxFast(off.lamp_red)
+
     ProcessCTRL.Bowl_Stopped = True
   ' check Mag AND kao levels
     If Check.Magnesium_Level() = "true" Then
       Led.Control(Led_MagLevel, "on")
     Else
       Led.Control(Led_MagLevel, "error")
-      SerialHandler.TxRxFast(off.lamp_green)
-      'SerialHandler.TxRxFast({On}.lamp_red)
+      SerialCpuComm.TxRxFast("red", 1)
       Message.Error("Magnesium Level too low")
       Goto Finish
     Endif
@@ -273,35 +275,27 @@ Public Sub Process_Start()
       Led.Control(Led_KaolineLevel, "on")
     Else
       Led.Control(Led_KaolineLevel, "error")
-      'SerialHandler.TxRxFast(off.lamp_green)
-      'SerialHandler.TxRxFast({On}.lamp_red)
+      SerialCpuComm.TxRxFast("red", 1)
       Message.Error("Kaoline Level too low")
       Goto Finish
     Endif
   ' synchronize machine
     StatusText("Synchronize machine..")
     i = SyncMachine.Go()
-    'SerialHandler.TxRxFast(off.lamp_green)
-    'SerialHandler.TxRxFast(off.lamp_orange)
-    'SerialHandler.TxRxFast(off.lamp_red)
     Print "end sync: " & i
     If (i = 2) Then Goto Finish
 
-    'SerialHandler.TxRxFast({On}.lamp_orange)
     Wait 1
     Print "still processing "
     ' search for input container
     StatusText("Looking for containers..")
     Reply = Search.Input_Container()
     If Reply = "ERR" Then
-      'SerialHandler.TxRxFast({On}.lamp_red)
+      SerialCpuComm.TxRxFast("red", 1)
       Message.Error("No container at input detected")
-      'SerialHandler.TxRxFast(off.lamp_red)
-      'SerialHandler.TxRxFast(off.lamp_orange)
-      'SerialHandler.TxRxFast({On}.lamp_green)
       Goto Finish   ' was return
     Else If Reply = "TimeOut" Then
-      'SerialHandler.TxRxFast({On}.lamp_red)
+      SerialCpuComm.TxRxFast("red", 1)
       Message.Error("Timeout during input container search")
       Goto Finish   ' was return
     Endif
@@ -309,11 +303,8 @@ Public Sub Process_Start()
     ProcessCTRL.Input_Container = True
     ' search for output container
     If Search.Output_Container() = "ERR" Then
-      'SerialHandler.TxRxFast({On}.lamp_red)
+      SerialCpuComm.TxRxFast("red", 1)
       Message.Error("No container at output detected")
-      'SerialHandler.TxRxFast(off.lamp_red)
-      'SerialHandler.TxRxFast(off.lamp_orange)
-      'SerialHandler.TxRxFast({On}.lamp_green)
       Goto Finish   ' was return
     Endif
     If StopProcess = 1 Then Goto finish
@@ -321,7 +312,6 @@ Public Sub Process_Start()
     
 
   Processes.Text = 0    ' reset counter
-  'Progress.Display(BarArea, 0)
   ProgressBar1.Value = 0
   ProcessCTRL.Go()
  
@@ -331,9 +321,8 @@ Finish:
   If StopProcess = 1 Then
     Stop_Process()
   Endif
-  'SerialHandler.TxRxFast(off.lamp_orange)
-  'SerialHandler.TxRxFast(off.lamp_red)
-  'SerialHandler.TxRxFast({On}.lamp_green)
+  Wait 0.5
+  SerialCpuComm.TxRxFast("blue", 1)
   Set_To_Stop() ' buttons, etc
   StatusBox.Text = "Ready"
   Return

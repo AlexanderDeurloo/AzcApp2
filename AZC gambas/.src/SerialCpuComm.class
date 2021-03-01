@@ -1,7 +1,7 @@
 ' Gambas class file
 
 Library "/home/pi/AzcApp/libSerial"
-Extern SerialTxRx(Devicename As String, DataTx As String, Reply As Pointer, Length As Integer) As Integer
+Extern SerialTxRx(Devicename As String, DataTx As String, Reply As Pointer, Length As Integer, Blocking As Integer) As Integer
 
 Public SerialPortCpu As String = ""
 
@@ -16,7 +16,7 @@ Public Sub Init(SerialDevice As String) As Integer
 End
 
 
-Public Sub TxRxFast(Command As String) As String
+Public Sub TxRxFast(Command As String, Blocking As Integer) As String
   Dim CommandToSend As String
   Dim ReplyFromCpu As String = "123456789012345678901234567890"
   Dim bytecnt As Integer
@@ -30,7 +30,7 @@ Public Sub TxRxFast(Command As String) As String
     CommandToSend = CommandToSend & "\n"
   Endif
     
-  bytecnt = SerialTxRx(SerialPortCpu, CommandToSend, VarPtr(ReplyFromCpu), 30)
+  bytecnt = SerialTxRx(SerialPortCpu, CommandToSend, VarPtr(ReplyFromCpu), 30, Blocking)
   If (bytecnt > 1)
     ReplyFromCpu = Left$(ReplyFromCpu, bytecnt - 1)
   Endif

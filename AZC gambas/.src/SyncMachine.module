@@ -25,7 +25,7 @@ End
 Public Sub Controls_To_Default() As Integer
   Dim Errors As Integer = 0
   
-  SerialCpuComm.TxRxFast("waterfillstop")
+  SerialCpuComm.TxRxFast("waterfillstop", 1)
 
   PlcOutputs.OutputStoreMove("rest")
   ' TODO: freq control via RS485

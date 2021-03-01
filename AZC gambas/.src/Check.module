@@ -170,7 +170,7 @@ End
 Public Sub Fill_Status() As String 
   Dim Reply As String
   Dim ReceivedData As String
-  ReceivedData = SerialCpuComm.TxRxFast("waterfillstatus?")
+  ReceivedData = SerialCpuComm.TxRxFast("waterfillstatus?", 1)
   'Print ReceivedData 'debugger
   If Comp(ReceivedData, "Stop") = 0 Then
     Reply = "stopped"

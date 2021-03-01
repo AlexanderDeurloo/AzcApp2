@@ -134,9 +134,9 @@ Public Sub Fill_Input() As Integer ' TODO: to be expanded with timeout capture a
   Dim returncode As Integer
   returncode = 1
   
-  SerialCpuComm.TxRxFast("waterfillstop")
+  SerialCpuComm.TxRxFast("waterfillstop", 1)
   Print "before fill: " & Check.Fill_Status()
-  SerialCpuComm.TxRxFast("waterfillstart")
+  SerialCpuComm.TxRxFast("waterfillstart", 1)
   Print "fill started: " & Check.Fill_Status()
   Wait 0.5
   MainAZC.StatusText("Applying water to input container...")
@@ -151,7 +151,7 @@ Public Sub Fill_Input() As Integer ' TODO: to be expanded with timeout capture a
   Loop Until Check.Fill_Status() = "done"
   returncode = 0
 finish:
-  SerialCpuComm.TxRxFast("waterfillstop") ' just for safety
+  SerialCpuComm.TxRxFast("waterfillstop", 1) ' just for safety
   MainAZC.StatusText("Water fill done.")
   Wait 2  ' allow last drops to fall.
   Return returncode
