@@ -28,7 +28,8 @@ Public Sub Controls_To_Default() As Integer
   SerialCpuComm.TxRxFast("waterfillstop", 1)
 
   PlcOutputs.OutputStoreMove("rest")
-  ' TODO: freq control via RS485
+  FreqCtrl.SetFreq(0.0, "OFF")
+  ' TODO: read freq controller via RS485 for actual status
   PlcOutputs.Set("HpPumpPower", 0)
   PlcOutputs.Set("TubePumpPower", 0)
   PlcOutputs.Set("AirTubeValveMagnesium", 0)
@@ -44,7 +45,7 @@ Public Sub Controls_To_Default() As Integer
   PlcOutputs.OutputStoreRotate("off")
   PlcOutputs.BowlDrain("underbowl")
   
-  'use serial control FOR stirrer:
+  'use serial control FOR Stirrer:
   Stirrer.SetRpm(0)    '
   StirProcess.MoveStir("clean")
   
@@ -53,22 +54,11 @@ End
 
 
 Public Sub Light_Tower() As Integer
-  Dim reply As String
-  Dim Errors As Integer
-  ' TODO: lamps
-'  reply = SerialHandler.TxRxFast({On}.lamp_green)
-  Print "green on"
+  SerialCpuComm.TxRxFast("green", 1)
   Wait 0.1
-'  reply = reply & SerialHandler.TxRxFast({On}.lamp_orange)
-  Print "orange on"
+  SerialCpuComm.TxRxFast("blue", 1)
   Wait 0.1
-'reply = reply & SerialHandler.TxRxFast({On}.lamp_red)
-  Print "red on"
+  SerialCpuComm.TxRxFast("red", 1)
   Wait 0.1
-  If (reply = "ERR00ERR00ERR00") Then
-    Errors = 0
-  Else
-    Errors = 1
-  Endif
-  Return Errors
+  Return 0
 End

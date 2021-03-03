@@ -43,14 +43,12 @@ End
 Public Sub Next_Output() As Integer
     MainAZC.StatusText("Move output store one position...")
     PlcOutputs.OutputStoreRotate("on")
-    'SerialHandler.TxRx({On}.output_store_rotate)
     Do
       Wait 0.1
       If MainAZC.StopProcess = 1 Then Goto finish
-    Loop Until Check.output_store_rotate() = "on"
+    Loop Until Check.Output_Store_Rotate() = "on"
     Wait 0.5
     PlcOutputs.OutputStoreRotate("off")
-    'SerialHandler.TxRx(off.Output_store_rotate)
     Do
       Wait 0.1
       If MainAZC.StopProcess = 1 Then Goto finish
@@ -115,21 +113,9 @@ Public Sub Output_Container() As String
       Break
     Endif
     If MainAZC.StopProcess = 1 Then Goto finish
-    'Next = i + 1
     Print "Move to next position: " & CStr(i + 1)
     Next_Output()
-'    SerialHandler.TxRxFast({On}.output_store_rotate)
-'    Do
- '     Wait 0.1
-  '    If MainAZC.StopProcess = 1 Then Goto finish
-   ' Loop Until Check.Output_Store_Rotate() = "on"
-    'Wait 0.5
-'    SerialHandler.TxRxFast(off.output_store_rotate)
- '   Do
-  '    Wait 0.1
-   '   If MainAZC.StopProcess = 1 Then Goto finish
- '   Loop Until Check.Output_Store_Rotate() = "off"
-     Wait 0.5
+    Wait 0.5
   Next
 finish:
   If MainAZC.StopProcess = 1 Then Return "search cancelled"

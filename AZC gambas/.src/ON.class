@@ -1,37 +1,38 @@
 ' Gambas class file
-Static Public output_store_move As String = "setA 0"
-Static Public lamp_red As String = "setA 1"
-Static Public lamp_orange As String = "setA 2"
-Static Public lamp_green As String = "setA 3"
-Static Public sample_valve As String = "setA 4"
-Static Public high_pressure As String = "setA 5"
-Static Public stirrer As String = "setA 6"
-Static Public bowl_low_speed As String = "setA 7"
 
-Static Public output_store_rotate As String = "setB 0"
+'Static Public output_store_move As String = "setA 0"
+'Static Public lamp_red As String = "setA 1"
+'Static Public lamp_orange As String = "setA 2"
+'Static Public lamp_green As String = "setA 3"
+'Static Public sample_valve As String = "setA 4"
+'Static Public high_pressure As String = "setA 5"
+'Static Public stirrer As String = "setA 6"
+'Static Public bowl_low_speed As String = "setA 7"
+
+'Static Public output_store_rotate As String = "setB 0"
 'STATIC PUBLIC stirrer_max AS String = "setB 1"
-Static Public pump_tube As String = "setB 2"
-Static Public freq_1 As String = "setB 3"
-Static Public freq_2 As String = "setB 4"
-Static Public magnesium_valve As String = "setB 5"
-Static Public kaoline_valve As String = "setB 6"
-Static Public stirrer_rotate As String = "setB 7"
+'Static Public pump_tube As String = "setB 2"
+'Static Public freq_1 As String = "setB 3"
+'Static Public freq_2 As String = "setB 4"
+'Static Public magnesium_valve As String = "setB 5"
+'Static Public kaoline_valve As String = "setB 6"
+'Static Public stirrer_rotate As String = "setB 7"
 
-Static Public drain_bowl As String = "setC 1"
-Static Public stirrer_lift As String = "setC 2"
-Static Public pump_magnesium As String = "setC 3"
+'Static Public drain_bowl As String = "setC 1"
+'Static Public stirrer_lift As String = "setC 2"
+'Static Public pump_magnesium As String = "setC 3"
 
-Static Public input_store_rotate As String = "setC 4"
-Static Public input_store_next_TimeOut As String = "inputnext:timeout " 'there is a whitespace at the end to add value with it.
+'Static Public input_store_rotate As String = "setC 4"
+'Static Public input_store_next_TimeOut As String = "inputnext:timeout " 'there is a whitespace at the end to add value with it.
                                                                         'this command is used only once during init to configure the plc
-Static Public input_store_next As String = "inputnext"
+'Static Public input_store_next As String = "inputnext"
 
-Static Public Water_valve As String = "setC 5"
-Static Public Water_Fill_TimeOut As String = "fill:timeout " 'there is a whitespace at the end to add value with it.
+'Static Public Water_valve As String = "setC 5"
+'Static Public Water_Fill_TimeOut As String = "fill:timeout " 'there is a whitespace at the end to add value with it.
                                                               'this command is used only once during init to configure the plc:in mainazc,Init_Machine
-Static Public water_valve_fill As String = "fill"
+'Static Public water_valve_fill As String = "fill"
 
-Static Public water_valve_clean As String = "setC 6"
-Static Public water_valve_tube As String = "setC 7"
-Static Public water_valve_HP As String = "setC 8"
-Static Public power_down As String = "setC 9"
+'Static Public water_valve_clean As String = "setC 6"
+'Static Public water_valve_tube As String = "setC 7"
+'Static Public water_valve_HP As String = "setC 8"
+'Static Public power_down As String = "setC 9"

@@ -13,7 +13,7 @@ Public Sub All(skipbowl As Boolean)
   Do
     Wait 0.1
     If MainAZC.StopProcess = 1 Then Goto finish
-  Loop Until Stir_Stop_Check() = "done"   ' check until stirrer clean is done.
+  Loop Until Stir_Stop_Check() = "done"   ' check until Stirrer clean is done.
   Endif
   Print "nu de bowl dan"
   Wait 0.5
@@ -71,7 +71,7 @@ Public Sub Stirrer_Setup(cleanTime As Integer)
     Loop Until Check.Stirrer_Lift() = "down"
   Endif
   Stirrer.SetRpm(Val(MainAZC.Var_Array[MainAZC.Stirrer_Low_Speed, MainAZC.Var_Ini]))    '
-  ' stirrer is in clean position now.
+  ' Stirrer is in clean position now.
   Wait 0.1
     PlcOutputs.Set("WaterValveStirrerClean", 1)
   Wait 0.1
@@ -134,11 +134,8 @@ Public Sub Bowl_Setup()
   Loop Until (Stir_Clean_Pending = False)
   Print "stir is ready, bowl can continue"
   Print "freq1 off"
-  'Print SerialHandler.TxRxFast(off.freq_1)  ' safety
-  ' TODO: freq control via RS485 !!!
-  Print "freq 2 off"
-  'Print SerialHandler.TxRxFast(off.freq_2)  ' safety
-  ' TODO: freq control via RS485 !!!
+  FreqCtrl.SetFreq(0.0, "OFF")
+  ' TODO: read freq controller via RS485 for actual status
   Print "wait until bowl stopped(simple timer)"
   Do
     Wait 0.1
@@ -148,27 +145,24 @@ Public Sub Bowl_Setup()
   Print "make output store position is off"
   If Check.Output_Store_Move() = "on" Then
     PlcOutputs.OutputStoreMove("rest")
-    'SerialHandler.TxRxFast(off.output_store_move)
     Do
      Wait 0.1
     Loop Until Check.Output_Store_Move() = "off"
   Endif
 
-  Print "make drain_bowl position under bowl"  'china: move it under bowl
+  Print "move drain under bowl" 
   If Check.Drain_Bowl_Position() = "on" Then
     PlcOutputs.BowlDrain("underbowl")
-    'SerialHandler.TxRxFast(off.drain_bowl)
     Do
      Wait 0.1
     Loop Until Check.Drain_Bowl_Position() = "off"
   Endif
 
   ' wait for stir clean.
-  Print "bowl ls"
-  ' bowl slow speed
+  Print "bowl lowspeed"
   If MainAZC.StopProcess = 1 Then Goto finish
-  ' TODO: freq control via RS485 for slow speed
-  'Print SerialHandler.TxRxFast({On}.bowl_low_speed)
+  FreqCtrl.SetFreq(2.0, "ON")
+  ' TODO: read freq controller via RS485 for actual status
   Wait 0.5
   ' kaoline clean moment
   Print "clean kaoline tube"
@@ -248,8 +242,8 @@ End
 Public Sub Bowl_Stop()
   PlcOutputs.Set("HpPumpPower", 0)
   Wait 0.2
-  ' TODO: freq control via RS485 !!!!!
-  'SerialHandler.TxRxFast(off.bowl_low_speed)
+  FreqCtrl.SetFreq(0.0, "OFF")
+  ' TODO: read freq controller via RS485 for actual status
   Print "bowl is clean and all related ctrls are off"
   Return
 End

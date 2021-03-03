@@ -21,7 +21,7 @@ Public BowlStarted As Boolean
 
 Public Sub GoForIt()
   ' TODO: lamps
-  'SerialHandler.TxRxFast(off.lamp_green)
+  SerialCpuComm.TxRxFast("green", 1)
   InputCount = 0
   StirCount = 0
   LastContainer = False
@@ -52,8 +52,7 @@ Public Sub GoForIt()
     ' Bowl()
     Wait 0.1
   Loop Until (LastContainer = True) And (ToStir = 0)
-  ' TODO: lamps
-  'SerialHandler.TxRxFast({On}.lamp_green)
+  SerialCpuComm.TxRxFast("green", 1)
 End
 
 Public Sub BowlSpeedUp()
@@ -76,11 +75,11 @@ Public Sub Stir()
   Print "stirpending = " & StirPending
   If StirPending = True Then
     If StirDone = False Then Return
-    'use serial control for stirrer:
+    'use serial control for Stirrer:
     Stirrer.SetRpm(Val(MainAZC.Var_Array[MainAZC.Stirrer_Low_Speed, MainAZC.Var_Ini]))    '
     If SampleTaken = False Then Return
     If (CleanMachine.Stir_Pending = False) Then
-      'use serial control for stirrer:
+      'use serial control for Stirrer:
       Stirrer.SetRpm(0)    '
     Endif
     'StirPending = FALSE
@@ -90,8 +89,7 @@ Public Sub Stir()
     '  SerialHandler.TxRxFast(on.stirrer_lift) ' lift up
     '  DO
         If (FillDone = True) Then
-          ' TODO: lamps
-          'SerialHandler.TxRxFast(off.lamp_orange)
+        SerialCpuComm.TxRxFast("blue", 1)
         Endif
      '   WAIT 0.1
       'LOOP UNTIL Check.Stirrer_Lift() = "up"
@@ -109,7 +107,7 @@ Public Sub Stir()
     Print MainAZC.Stirrer_Dirty
     
     If (MainAZC.Stirrer_Dirty = True) Then
-      ' clean stirrer
+      ' clean Stirrer
       'CleanMachine.Stir(5)
 
       Return
@@ -126,7 +124,6 @@ Public Sub Stir()
         Loop Until Check.Stirrer_Lift() = "up"
       Endif
       PlcOutputs.StirrerRotate("stir")
-      'SerialHandler.TxRxFast({On}.stirrer_rotate)
       Do
         FillProcess.CheckFill()
         Wait 0.2
@@ -134,7 +131,6 @@ Public Sub Stir()
     Endif
     If (Check.Stirrer_Lift() = "up") Then
       PlcOutputs.StirrerLift("down")
-      'SerialHandler.TxRxFast(off.stirrer_lift) ' lift down
       Do
         FillProcess.CheckFill()
         Wait 0.2
@@ -142,7 +138,7 @@ Public Sub Stir()
     Endif
 
     Inc StirCount
-    'use serial control for stirrer:
+    'use serial control for Stirrer:
     Stirrer.SetRpm(Val(MainAZC.Var_Array[MainAZC.Stirrer_High_Speed, MainAZC.Var_Ini]))    '
     StirPending = True
     StirDone = False
@@ -174,8 +170,7 @@ Public Sub Fill()
      Return
     Endif
     Wait 0.1
-    ' TODO: lamps
-    'SerialHandler.TxRxFast(off.lamp_orange)  ' debug
+    SerialCpuComm.TxRxFast("green", 1)
     Wait 0.5
     If StirPending = True Then Return
     If SampleTaken = False Then
@@ -202,8 +197,7 @@ Public Sub Fill()
       Inc InputCount
       FillPending = True
       ' cmd to plc
-      'TODO: lamps
-      'SerialHandler.TxRxFast({On}.lamp_orange)
+      SerialCpuComm.TxRxFast("blue", 1)
       Print "1 start fill by plc"
       FillDone = False
       ' load timer
@@ -234,8 +228,7 @@ End
 
 Public Sub CheckFill()
    If (FillDone = True) Then
-      ' TODO: lamps
-      'SerialHandler.TxRxFast(off.lamp_orange) ' watervale off
+      SerialCpuComm.TxRxFast("blue", 1)
    Endif
 End
 

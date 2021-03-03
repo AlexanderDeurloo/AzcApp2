@@ -70,14 +70,16 @@ End
 
 
 Public Sub Menu_Home_Exit_Click()
-  If nogo = False Then SerialHandler.TxRxFast(off.stirrer_rotate)
+  If nogo = False Then PlcOutputs.StirrerRotate("clean")
+
   Wait 1
    Me.Close
 End
 
 
 Public Sub Menu_Home_Shutdown_Click()
-  If nogo = False Then SerialHandler.TxRxFast(off.stirrer_rotate)
+  If nogo = False Then PlcOutputs.StirrerRotate("clean")
+
   Wait 1
 '  IF (Var_Array[Auto_Shutdown, Var_Ini] = "1") THEN 
   StatusBox.Text = "Machine will switch off automatically."
@@ -636,14 +638,13 @@ End
 
 Public Sub Menu_Adv_Clean_Stirrer_Click()
   Set_To_Disable()
-  ' SerialHandler.TxRxFast(off.lamp_green)
-  ' SerialHandler.TxRxFast({On}.lamp_orange)
+  SerialCpuComm.TxRxFast("blue", 1)
   StatusBox.Text = "Cleaning Stirrer"
   Led.Control(Led_StirrerClean, "busy")
   Print "setup stir clean"
   MainAZC.Fill_Time_Table() ' loads all timer settings in variables.
-  ' SerialHandler.TxRxFast({On}.lamp_red)
-
+  SerialCpuComm.TxRxFast("red", 1)
+  
   'CleanMachine.Stir_Clean_Pending = FALSE
   CleanMachine.Stir_Clean_Setup = False
   CleanMachine.Stir(TimeTable.Stirrer_Clean_Time)
@@ -653,9 +654,7 @@ Public Sub Menu_Adv_Clean_Stirrer_Click()
 
   Led.Control(Led_StirrerClean, "on")
   Print "lamp off"
-  'SerialHandler.TxRxFast(off.lamp_red)
-  'SerialHandler.TxRxFast(off.lamp_orange)
-  'SerialHandler.TxRxFast({On}.lamp_green)
+  SerialCpuComm.TxRxFast("green", 1)
   Set_To_Stop()
   StatusBox.Text = "Ready"
 End
@@ -663,22 +662,19 @@ End
 
 Public Sub Menu_Adv_Clean_Bowl_Click()
   Set_To_Disable()
-  'SerialHandler.TxRxFast(off.lamp_green)
-  'SerialHandler.TxRxFast({On}.lamp_orange)
+  SerialCpuComm.TxRxFast("blue", 1)
   StatusBox.Text = "Cleaning Bowl"
   Led.Control(Led_BowlClean, "busy")
   Print "setup bowl clean"
   MainAZC.Fill_Time_Table() ' loads all timer settings in variables.
-  'SerialHandler.TxRxFast({On}.lamp_red)
+  SerialCpuComm.TxRxFast("red", 1)
   MainAZC.update_leds()
   ProcessCTRL.Bowl_Stopped = True
   CleanMachine.Bowl_Setup()
   Print "setup bowl done"
   Led.Control(Led_BowlClean, "on")
   Print "lamp off"
-  'SerialHandler.TxRxFast(off.lamp_red)
-  'SerialHandler.TxRxFast(off.lamp_orange)
-  'SerialHandler.TxRxFast({On}.lamp_green)
+  SerialCpuComm.TxRxFast("green", 1)
   Set_To_Stop()
   StatusBox.Text = "Ready"
 End
@@ -716,12 +712,11 @@ End
 
 Public Sub Menu_Adv_Clean_Sample_Filter_Click()
   Set_To_Disable()
-  'SerialHandler.TxRxFast(off.lamp_green)
-  'SerialHandler.TxRxFast({On}.lamp_orange)
+  SerialCpuComm.TxRxFast("blue", 1)
   StatusBox.Text = "Manual clean sample filter"
   Led.Control(Led_BowlClean, "busy")
   Print "setup manual sample filter clean"
-  'SerialHandler.TxRxFast({On}.lamp_red)
+  SerialCpuComm.TxRxFast("red", 1)
   MainAZC.update_leds()
   StirProcess.MoveStirCleanFilter()
   Wait 2
@@ -729,9 +724,7 @@ Public Sub Menu_Adv_Clean_Sample_Filter_Click()
   Print "manual sample filter clean done"
   StirProcess.MoveStir("clean")
   Print "lamp off"
-  'SerialHandler.TxRxFast(off.lamp_red)
-  'SerialHandler.TxRxFast(off.lamp_orange)
-  'SerialHandler.TxRxFast({On}.lamp_green)
+  SerialCpuComm.TxRxFast("green", 1)
   Set_To_Stop()
   StatusBox.Text = "Ready"
 End

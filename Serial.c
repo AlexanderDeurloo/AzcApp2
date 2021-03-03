@@ -113,8 +113,9 @@ int SerialOpen(char *PortName, int speed, int parity, int Blocking, int reset)
             int DtrFlag;
             DtrFlag = TIOCM_DTR;
             ioctl(fd,TIOCMBIS,&DtrFlag);
-            sleep(1);
+            sleep(2);
             ioctl(fd,TIOCMBIC,&DtrFlag);
+            sleep(1);
         }
         return 0;
         

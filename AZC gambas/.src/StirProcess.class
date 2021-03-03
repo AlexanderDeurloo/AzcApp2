@@ -6,8 +6,6 @@ Public Sub MoveStir(position As String)
   If position = "clean" Then
     If Check.Stirrer_Rotate() = "stir" Then
       If Check.Stirrer_Lift() = "down" Then
-        ' [GB2:KEYW] SerialHandler.TxRxFast(on.stirrer_lift) ' lift up
-        'SerialHandler.TxRxFast({On}.stirrer_lift) ' lift up
         PlcOutputs.StirrerLift("up")
         Do
           Wait 0.1
@@ -15,14 +13,12 @@ Public Sub MoveStir(position As String)
       Endif
       Wait 1
       PlcOutputs.StirrerRotate("clean")
-      'SerialHandler.TxRxFast(off.stirrer_rotate)
       Do
         Wait 0.1
       Loop Until Check.Stirrer_Rotate() = "clean"
     Endif
     If Check.Stirrer_Lift() = "up" Then
       PlcOutputs.StirrerLift("down")
-      'SerialHandler.TxRxFast(off.stirrer_lift) ' lift down
       Do
         Wait 0.1
       Loop Until Check.Stirrer_Lift() = "down"
@@ -31,14 +27,12 @@ Public Sub MoveStir(position As String)
     If Check.Stirrer_Rotate() = "clean" Then
       If Check.Stirrer_Lift() = "down" Then
         PlcOutputs.StirrerLift("up")
-        'SerialHandler.TxRxFast({On}.stirrer_lift) ' lift up
         Do
           FillProcess.CheckFill()
           Wait 0.2
         Loop Until Check.Stirrer_Lift() = "up"
       Endif
       PlcOutputs.StirrerRotate("stir")
-      'SerialHandler.TxRxFast({On}.stirrer_rotate)
       Do
         FillProcess.CheckFill()
         Wait 0.2
@@ -46,7 +40,6 @@ Public Sub MoveStir(position As String)
     Endif
     If (Check.Stirrer_Lift() = "up") Then
       PlcOutputs.StirrerLift("down")
-      'SerialHandler.TxRxFast(off.stirrer_lift) ' lift down
       Do
         FillProcess.CheckFill()
         Wait 0.2
@@ -60,13 +53,11 @@ End
 Public Sub MoveStirCleanFilter()
   If Check.Stirrer_Lift() = "down" Then
     PlcOutputs.StirrerLift("up")
-    'SerialHandler.TxRxFast({On}.stirrer_lift) ' lift up
     Do
       Wait 0.2
     Loop Until Check.Stirrer_Lift() = "up"
   Endif
   PlcOutputs.StirrerRotate("stir")
-  'SerialHandler.TxRxFast({On}.stirrer_rotate) 'rotate to stir position
   Do
     FillProcess.CheckFill()
     Wait 0.2

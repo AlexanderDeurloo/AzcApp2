@@ -43,7 +43,7 @@ End
 
 Public Sub Reset(SerialDevice As String)  ' TODO: needs fine tuning: time and colors, etc. below works, but is Q%
   Dim ReplyFromCpu As String
-  ReplyFromCpu = TxRxFast("blinkon", 1)
+  ReplyFromCpu = TxRxFast("blinkon", 0)
   Wait 2
   SerialOpen(SerialDevice, 4800, 1, 0, 1) ' reset On means: dtr Line set And cleared
   Wait 5

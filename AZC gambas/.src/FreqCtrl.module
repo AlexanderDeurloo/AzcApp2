@@ -1,0 +1,78 @@
+' Gambas module file
+
+Library "/home/pi/ModBus/libRS485"
+
+Extern RS485_WriteAndCheckRegister(DevName As String, Register As Integer, Setting As Integer, Reading As Pointer) As Integer
+
+Public dACC As Integer = &h0383&
+Public dDEC As Integer = &h0384&
+Public dFREQ As Integer = &h0380&
+Public dRUNSTOP As Integer = &h0382&
+Public dPOLENR As Integer = &h0120B&
+Public dRATEDSLIP As Integer = &h0120C&
+Public dRATEDCURR As Integer = &h0120D&
+Public dRUNFWD As Integer = 3
+Public dRUNBCK As Integer = 1
+Public dSTOP As Integer = 0
+
+Public ConfigTransferred As Boolean = 0
+
+
+Public Sub WriteAndCheck(Register As Integer, Setting As Integer) As Integer
+  Dim result As Integer
+  Dim Reading As Integer
+  result = RS485_WriteAndCheckRegister("/dev/ttyRS485", Register, Setting, VarPtr(Reading))
+  If (result <> 0) 
+    Return -1
+  Else
+    Return 0
+  Endif
+End
+
+
+Public Sub SetFreq(Speed As Float, Mode As String)  ' Speed in Hz.
+  Dim FreqSetting As Integer
+  SendConfig()
+
+  If Speed < 0.5
+    FreqSetting = 50
+    Print "Speed to low. Adjusted to 0.5Hz"
+  Else
+    FreqSetting = Speed * 100
+  Endif
+  
+  WriteAndCheck(dFREQ, FreqSetting)
+  If Mode = "ON"
+    Print "FreqSetting = " & FreqSetting
+    WriteAndCheck(dRUNSTOP, dRUNFWD)
+  Else 
+    Print "Stop bowl motor"
+    WriteAndCheck(dRUNSTOP, dSTOP)
+  Endif
+End
+
+
+
+Public Sub SendConfig()
+  If ConfigTransferred = True
+    Return
+  Endif
+  
+  Print "Send config to freq controller"
+
+  WriteAndCheck(dACC, 200)  ' 20.0 sec
+  Wait 0.1
+  WriteAndCheck(dDEC, 250)  ' 25.0 sec
+  Wait 0.1
+  WriteAndCheck(dPOLENR, 2)
+  Wait 0.1
+  WriteAndCheck(dRATEDSLIP, 0)
+  Wait 0.1
+  WriteAndCheck(dRATEDCURR, 32)  ' 3.2 Amps
+  Wait 0.1
+  WriteAndCheck(dFREQ, 50) ' 0.5Hz
+  Wait 1
+  Print "Config to freq controller done"
+  
+  ConfigTransferred = True
+End

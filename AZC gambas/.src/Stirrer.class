@@ -64,7 +64,7 @@ Public Sub Transmit(TXdata As Byte[])
       Write #SerialPortStirrer, (TXdata[index])
       Inc index
     Loop Until index > 5
-    Print "stirrer transmit: done"
+    Print "Stirrer transmit: done"
     Return
   End If
 End
@@ -81,7 +81,7 @@ Public Sub SerialPortStirrer_Read() 'called automatically
     'PRINT Hex$(RecBytes[ReadIndex]) 'display as hex
   Next
   ReadReady = 1
-  Print "stirrer read done"
+  Print "Stirrer read done"
 End
 
 
@@ -100,9 +100,9 @@ Public Sub SetRpm(RpmSetting As Integer) As Integer
   Transmit(StirrerData)
   Wait 0.3
   If RecBytes[4] = 0 Then
-    Print "stirrer is closed. no need to send 0 rpm"
+    Print "Stirrer is closed. no need to send 0 rpm"
   Else
-    Print "stirrer is open. close it by sending 0 rpm"
+    Print "Stirrer is open. close it by sending 0 rpm"
     StirrerData[0] = &hFE
     StirrerData[1] = &hB1
     StirrerData[2] = 0

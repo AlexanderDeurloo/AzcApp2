@@ -2,10 +2,7 @@
 
 Public Sub Stop()
   Print "stop triggered"
-  ' TODO: lamps
-  'SerialHandler.TxRx({On}.lamp_red)
-  'SerialHandler.TxRx(off.lamp_green)
-  'SerialHandler.TxRx(off.lamp_orange)
+  SerialCpuComm.TxRxFast("red", 1)
   Print "red on, others off"
  
   PlcOutputs.Set("InputMotor", 0)
@@ -19,9 +16,10 @@ Public Sub Stop()
   PlcOutputs.Set("AirTubeValveSample", 0)
   PlcOutputs.Set("TubePumpPower", 0)
 
-  ' TODO: freq control via RS485 !!!!
+  FreqCtrl.SetFreq(0.0, "OFF")
+  ' TODO: read freq controller via RS485 for actual status
 
-  'use new serial control for stirrer
+  'use new serial control for Stirrer:
   Stirrer.SetRpm(0)    '
 
   Print "end stop"
