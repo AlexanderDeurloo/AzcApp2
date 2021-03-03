@@ -31,16 +31,14 @@ SearchComment=False
 SearchString=True
 
 [OpenFile]
-Count=8
-Active=3
-File[1]=".src/MainAZC.class:0.81"
-File[2]=".src/OFF.class:1.29"
-File[3]=".src/ON.class:46.20"
-File[4]=".src/Search.module:50.78"
-File[5]=".src/Check.module:30.22"
-File[6]=".src/FillProcess.class:45.88"
-File[7]=".src/StirProcess.class:0.55"
-File[8]=".src/CleanMachine.class:32.152"
+Count=6
+Active=5
+File[1]=".src/MainAZC.class:0.0"
+File[2]=".src/Search.module:50.78"
+File[3]=".src/Check.module:30.22"
+File[4]=".src/FillProcess.class:45.88"
+File[5]=".src/StirProcess.class:0.55"
+File[6]=".src/Stirrer.class:22.9"
 
 [Watches]
 Count=1
