@@ -62,6 +62,35 @@ Public DumpI As Integer = 0
 
 Public Ini_Path As String = "~/Settings/AZC.ini"
 
+
+Private ProgressBarDrawArea As DrawingArea
+
+
+
+
+Public Sub DA_Draw()
+ Dim pb As String
+ Dim i As Integer
+ 
+ pb = CStr(ProgressBar1.Value * 100) & "%"
+ i = ProgressBarDrawArea.Font.TextWidth(pb)
+ With Paint
+   .Brush = .Color(&H244B96)  
+   .Rectangle(0, 0, ProgressBarDrawArea.W * ProgressBar1.Value, ProgressBarDrawArea.H)
+   .Fill
+   '.Brush = .Color(Color.Black)
+   '.DrawText(pb, (ProgressBarDrawArea.W / 2) - (i / 2), ProgressBarDrawArea.H / 2, .Font.TextWidth(pb), ProgressBarDrawArea.H / 2, Align.Center)
+   .End
+ End With
+End
+
+
+
+
+
+
+
+
 Public Sub Menu_Home_About_Click()
   Dim AboutMessage As String
   AboutMessage = "Zonale Centrifuge.\nMediQuip\nThe Netherlands\nmediquip@kpnplanet.nl"
@@ -138,12 +167,17 @@ Public Sub Form_Open()
   MainDelay.Enabled = True  ' arms timer. On expire the leds are drawn.
   StartButton.Picture = Picture["play.png"]
   Me.Font.Size = 12
-  'TODO: how to increase the size of the menu items?
+
+
+  ProgressBarDrawArea = ProgressBar1.Children[0]
+  ProgressBarDrawArea.Background = &HF5F5F5
+  Object.Attach(ProgressBarDrawArea, Me, "DA")
     
 End
 
 
 Public Sub Init_Machine() As Boolean
+
     'Dim i As Integer
     ' link to PLC
     Dim fillcmd As String
@@ -453,8 +487,9 @@ Public Sub Menu_Recipes_Unlock_Click()   ' arms timer. On expire the leds are dr
     SP_BowlCleanPhase1Time.Enabled = False
     SP_BowlCleanPhase2Time.Enabled = False
     SP_BowlCleanPhase3Time.Enabled = False
+    PlusMinEnable(False)    
+
     Menu_Recipes_Default.Enabled = False
-    
     protect = True
     Menu_Recipes_Unlock.Text = "Unlock"
   Else
@@ -470,6 +505,7 @@ Public Sub Menu_Recipes_Unlock_Click()   ' arms timer. On expire the leds are dr
     SP_BowlCleanPhase1Time.Enabled = True
     SP_BowlCleanPhase2Time.Enabled = True
     SP_BowlCleanPhase3Time.Enabled = True
+    PlusMinEnable(True)    
 
     Menu_Recipes_Default.Enabled = True
     protect = False
@@ -730,8 +766,112 @@ Public Sub Menu_Adv_Clean_Sample_Filter_Click()
 End
 
 
-Public Sub Led_MagLevel_Draw()
 
-  
+Public Sub PlusMinEnable(Setting As Boolean)
+    Stir_Min.Enabled = Setting
+    Stir_Plus.Enabled = Setting
+    MagnFill_Min.Enabled = Setting
+    MagnFill_Plus.Enabled = Setting
+    BowlWaterFill_Min.Enabled = Setting
+    BowlWaterFill_Plus.Enabled = Setting
+    Sample_Min.Enabled = Setting
+    Sample_Plus.Enabled = Setting
+    Kaoline_Min.Enabled = Setting
+    Kaoline_Plus.Enabled = Setting
+    BowlWaterFill_Min.Enabled = Setting
+    BowlWaterFill_Plus.Enabled = Setting
+    Centrifuge_Min.Enabled = Setting
+    Centrifuge_Plus.Enabled = Setting
+    OutputCapture_Min.Enabled = Setting
+    OutputCapture_Plus.Enabled = Setting
+    StirClean_Min.Enabled = Setting
+    StirClean_Plus.Enabled = Setting
+    BowlCleanPhase1_Min.Enabled = Setting
+    BowlCleanPhase1_Plus.Enabled = Setting
+    BowlCleanPhase2_Min.Enabled = Setting
+    BowlCleanPhase2_Plus.Enabled = Setting
+    BowlCleanPhase3_Min.Enabled = Setting
+    BowlCleanPhase3_Plus.Enabled = Setting
 
 End
+
+
+Public Sub Stir_Min_Click()
+  Dec SP_StirTime.value
+End
+Public Sub Stir_Plus_Click()
+  Inc SP_StirTime.value
+End
+
+Public Sub MagnFill_Min_Click()
+  Dec SP_MagFillTime.Value
+End
+Public Sub MagnFill_Plus_Click()
+  Inc SP_MagFillTime.Value
+End
+
+Public Sub BowlWaterFill_Min_Click()
+  Dec SP_BowlWaterFillTime.Value
+End
+Public Sub BowlWaterFill_Plus_Click()
+  Inc SP_BowlWaterFillTime.Value
+End
+
+Public Sub Sample_Min_Click()
+  Dec SP_SampleTime.Value
+End
+Public Sub Sample_Plus_Click()
+  Inc SP_SampleTime.Value
+End
+
+Public Sub Kaoline_Min_Click()
+  Dec SP_KaolineFillTime.Value
+End
+Public Sub Kaoline_Plus_Click()
+  Inc SP_KaolineFillTime.Value
+End
+
+Public Sub Centrifuge_Min_Click()
+  Dec SP_CentrifugeTime.Value
+End
+Public Sub Centrifuge_Plus_Click()
+  Inc SP_CentrifugeTime.Value
+End
+
+Public Sub OutputCapture_Min_Click()
+  Dec SP_OutputCaptureTime.Value
+End
+Public Sub OutputCapture_Plus_Click()
+  Inc SP_OutputCaptureTime.Value
+End
+
+Public Sub StirClean_Min_Click()
+  Dec SP_StirrerCleanTime.Value
+End
+Public Sub StirClean_Plus_Click()
+  Inc SP_StirrerCleanTime.Value
+End
+
+Public Sub BowlCleanPhase1_Min_Click()
+  Dec SP_BowlCleanPhase1Time.Value
+End
+Public Sub BowlCleanPhase1_Plus_Click()
+  Inc SP_BowlCleanPhase1Time.Value
+End
+
+Public Sub BowlCleanPhase2_Min_Click()
+  Dec SP_BowlCleanPhase2Time.Value
+End
+Public Sub BowlCleanPhase2_Plus_Click()
+  Inc SP_BowlCleanPhase2Time.Value
+End
+
+Public Sub BowlCleanPhase3_Min_Click()
+  Dec SP_BowlCleanPhase3Time.Value
+End
+Public Sub BowlCleanPhase3_Plus_Click()
+  Inc SP_BowlCleanPhase3Time.Value
+  ProgressBar1.Value = ProgressBar1.Value + 0.01 'debugger
+End
+
+

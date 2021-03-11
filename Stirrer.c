@@ -75,10 +75,11 @@ int SerialRx(char *Result, size_t ResultSize)
         if (Result == NULL) return -1;
         if (ResultSize == 0) return -2;
         if (fd == 0) return -3;
-        
+        printf("Lets read data\n");
+
         bytes = read (fd, Result, ResultSize);
         Result[bytes] = 0; // terminate
-        //printf("Received %i chars: >%s<\n",bytes,Result);
+        printf("Received %i chars: >%s<\n",bytes,Result);
         return bytes;
 }
 
@@ -86,6 +87,7 @@ int SerialRx(char *Result, size_t ResultSize)
 int SerialOpen(char *PortName, int speed, int parity, int Blocking, int reset)
 {
         if (PortName == NULL) return -1;
+        printf("Lets open the port\n");
         fd = open (PortName, O_RDWR | O_NOCTTY | O_SYNC);
         if (fd < 0)
         {
@@ -93,7 +95,9 @@ int SerialOpen(char *PortName, int speed, int parity, int Blocking, int reset)
                 return -1;
         }
 
+        printf("Lets set the attribs\n");
         set_interface_attribs (fd, speed, parity);  // set speed to 115,200 bps, 8n1 (no parity)
+        printf("Lets set blocking\n");
         set_blocking (fd, Blocking);                // set blocking
         if(reset)
         {
@@ -122,6 +126,8 @@ int SerialTxSlow(char *Command, size_t CommandSize)
         if (CommandSize == 0) return -2;
         if(fd)
         {
+            printf("Lets write data\n");
+
             int i;
             for (i=0;i<CommandSize;i++)
             {
@@ -162,7 +168,21 @@ void PrintRx(char* Buff, int length)
 
 void main(void)
 {
-    SerialOpen("/dev/ttyUSB3", B9600, 0, 1, 0);
+    int ptr;
+    ptr = open("/dev/ttyUSB2",O_RDWR);
+    if(ptr < 0)
+    {
+        printf("err open\n");
+    }
+    write(ptr,"abc",3);
+    close(ptr);
+}
+        
+void Oldmain(void)
+{
+    
+    printf("Lets call SerialOpen\n");
+    SerialOpen("/dev/ttyUSB2", B9600, 0, 1, 0);
         
     int receivedlength = 0;
     uint8_t StirrerData[10];
@@ -173,6 +193,8 @@ void main(void)
     StirrerData[3] = 0x00;
     StirrerData[4] = 0x00;
     StirrerData[5] = 0xA0;
+
+    printf("Lets Tx first data\n");
     SerialTxSlow(StirrerData,6);
     sleep(1);
     receivedlength = SerialRx(Command,100);
