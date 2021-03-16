@@ -31,10 +31,14 @@ SearchComment=False
 SearchString=True
 
 [OpenFile]
-Count=2
-Active=1
-File[1]=".src/MainAZC.class:9.195"
-File[2]=".src/SerialCpuComm.class:3.52"
+Count=6
+Active=6
+File[1]=".src/MainAZC.class:47.184"
+File[2]=".src/SerialCpuComm.class:11.2"
+File[3]=".src/FreqCtrl.module:39.11"
+File[4]=".src/PlcOutputs.class:10.2"
+File[5]=".src/PlcInputs.class:30.2"
+File[6]=".src/Stirrer.class:2.25"
 
 [Watches]
 Count=1

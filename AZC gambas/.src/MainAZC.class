@@ -125,15 +125,14 @@ End
 Public Sub form_Close()
  ' StatusBox.Text = "shutting down..."
   FreqCtrl.SetFreq(0.0, "OFF") 'debugger
-
+  Stirrer.SetRpm(0)
+  Stirrer.CloseComm()
   StatusBox.Text = "Closing program..."
   PlcOutputs.Set("WaterValveHpPump", 0) 
   PlcOutputs.Set("AirBowlCooling", 0)
 
   'SerialHandler.serial_close()
   Wait 0.5
-  Stirrer.SerialCloseStirrer()  'china
-  Wait 1
 End
 
 
@@ -183,6 +182,7 @@ Public Sub Init_Machine() As Boolean
     'Dim i As Integer
     ' link to PLC
     Dim fillcmd As String
+    Stirrer.OpenComm((Var_Array[CommPortStirrer, Var_Ini]))
     Led.Control(Led_MagLevel, "busy")
     Led.Control(Led_KaolineLevel, "busy")
     Led.Control(Led_BowlClean, "busy")
@@ -241,7 +241,8 @@ Public Sub Init_Machine() As Boolean
   ' TODO TODO !!!
     Wait 0.05
     'Stirrer.SerialOpenStirrer(Var_Array[CommPortStirrer, Var_Ini])   '("/dev/ttyS4") 'china
-
+    Stirrer.SetRpm(200)
+    
     StatusBox.Text = "Stirrer ready"
     StartButton.Enabled = True
     led.Control(Led_SystemError, "off")
@@ -294,6 +295,7 @@ Public Sub Init_Machine() As Boolean
     SerialCpuComm.TxRxFast("blinkoff", 1)
     Set_To_Stop()
     StatusBox.Text = "Machine ready"
+    Stirrer.SetRpm(100)
 
 End
 
