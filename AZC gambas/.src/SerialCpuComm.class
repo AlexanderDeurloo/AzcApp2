@@ -1,6 +1,6 @@
 ' Gambas class file
 
-Library "/home/pi/AzcApp/libSerial"
+Library "~/AzcSystem/Libraries/Serial/libSerial"
 Extern SerialTxRx(Devicename As String, DataTx As String, Reply As Pointer, Length As Integer, Blocking As Integer) As Integer
 Extern SerialOpen(Devicename As String, Speed As Integer, Parity As Integer, Blocking As Integer, Reset As Integer) As Integer
 Extern SerialClose()
@@ -42,20 +42,20 @@ Public Sub TxRxFast(Command As String, Blocking As Integer) As String
 End
 
 Public Sub Reset(SerialDevice As String)  ' TODO: needs fine tuning: time and colors, etc. below works, but is Q%
-  Dim ReplyFromCpu As String
-  ReplyFromCpu = TxRxFast("blinkon", 0)
-  Wait 2
+'  Dim ReplyFromCpu As String
+  'ReplyFromCpu = TxRxFast("blinkon", 0)
+  'Wait 2
   SerialOpen(SerialDevice, 4800, 1, 0, 1) ' reset On means: dtr Line set And cleared
   Wait 5
   SerialClose()
-  Wait 1
-  TxRxFast("red", 0)
-  Wait 3
+  Wait 5
+  'TxRxFast("red", 0)  'dummy write
+  'Wait 6
   
-  ReplyFromCpu = TxRxFast("blue", 1)
-  Print "After reset and red we received " & ReplyFromCpu
-  Wait 0.5
-  ReplyFromCpu = TxRxFast("blinkon", 1)
-  Print "after blinkon we received " & ReplyFromCpu
+  'ReplyFromCpu = TxRxFast("blue", 1)
+  'Print "After reset and red we received " & ReplyFromCpu
+  'Wait 0.5
+  'ReplyFromCpu = TxRxFast("blinkon", 1)
+  'Print "after blinkon we received " & ReplyFromCpu
   
 End

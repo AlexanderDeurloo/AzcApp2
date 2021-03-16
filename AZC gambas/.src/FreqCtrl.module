@@ -1,6 +1,6 @@
 ' Gambas module file
 
-Library "/home/pi/ModBus/libRS485"
+Library "~/AzcSystem/Libraries/ModBus/libRS485"
 
 Extern RS485_WriteAndCheckRegister(DevName As String, Register As Integer, Setting As Integer, Reading As Pointer) As Integer
 

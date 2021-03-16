@@ -124,6 +124,8 @@ End
 
 Public Sub form_Close()
  ' StatusBox.Text = "shutting down..."
+  FreqCtrl.SetFreq(0.0, "OFF") 'debugger
+
   StatusBox.Text = "Closing program..."
   PlcOutputs.Set("WaterValveHpPump", 0) 
   PlcOutputs.Set("AirBowlCooling", 0)
@@ -194,13 +196,14 @@ Public Sub Init_Machine() As Boolean
       Print "Error in initializing serialcpu\n" 
       Quit
     Endif
-
+    FreqCtrl.SetFreq(1.0, "OFF") 'debugger
     ReceivedData = SerialCpuComm.TxRxFast("PlcPresent", 0)
     If Comp(ReceivedData, "CpuPresent") <> 0
       Print "Cpu didn't reply properly: " & ReceivedData
       ' give it another shot:
       StatusBox.Text = "Cpu pending..."
-      Wait 1
+      Print "Wait until light show is done. 1."
+      Wait 5  ' at least 4 sec to end the light show.
       ReceivedData = SerialCpuComm.TxRxFast("PlcPresent", 0)
       If Comp(ReceivedData, "CpuPresent") <> 0
         Print "Cpu didn't reply properly: " & ReceivedData
@@ -209,7 +212,7 @@ Public Sub Init_Machine() As Boolean
         Print "Reset CPU..."
           SerialCpuComm.Reset("/dev/ttyACM0")
         Print "reset done."
-        Wait 1
+        Wait 5
         ReceivedData = SerialCpuComm.TxRxFast("PlcPresent", 1)
         If Comp(ReceivedData, "CpuPresent") <> 0
           Message.Error("No contact with Cpu", "Stop")
@@ -217,7 +220,8 @@ Public Sub Init_Machine() As Boolean
         Endif
       Endif
     Endif
-    Wait 1
+    Print "Wait until light show is done. 2."
+    Wait 5 ' at least 4 sec to end the light show.
     ReceivedData = SerialCpuComm.TxRxFast("PlcPresent", 1)
     If Comp(ReceivedData, "CpuPresent") <> 0
       Message.Error("No proper contact with Cpu", "Stop")
@@ -279,7 +283,8 @@ Public Sub Init_Machine() As Boolean
     Wait 1
     PlcOutputs.Set("KaolineMotorPower", 1)
 
-    
+    FreqCtrl.SetFreq(2.0, "OFF") 'debugger
+
     'For i = 0 To i + 14
     '  Print Check.TubeValve_Kaoline()
     '  Wait 2

@@ -1,6 +1,6 @@
 ' Gambas class file
 
-Library "/home/pi/AzcApp/RevPi/libpiControlIf"
+Library "~/AzcSystem/Libraries/RevPi/libpiControlIf"
 
 Extern piControlWrite(Offset As Integer, Length As Integer, Setting As Pointer)
 
