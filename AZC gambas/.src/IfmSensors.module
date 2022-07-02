@@ -1,0 +1,129 @@
+' Gambas module file
+
+Library "~/AzcSystem/Libraries/IFM/IFM_lib"
+Extern IFM_Read_Sensor(SensorNr As Integer, SensorCnt As Integer, IpAddr As String, Type As Integer, Result As Pointer) As Integer
+'Public ResultSensor As Integer
+
+Public ResultOld As New Integer[4]
+Public InitSensors_Path As String = "~/Settings/AZC_Sensors.ini"
+
+Public SensorIpAddr As String
+Public SensorCount As Integer
+
+Public Sensor_Array As New String[20, 3]
+Public Sensor_Ini As Integer = 0    ' first colomn
+Public Sensor_Setting As Integer = 1 ' second colomn
+Public SensorFileString As String
+
+
+Public IpAddress As Integer = 0
+Public NoOfSensors As Integer = 1
+Public Sensor1_Lo As Integer = 2
+Public Sensor1_Hi As Integer = 3
+Public Sensor2_Lo As Integer = 4
+Public Sensor2_Hi As Integer = 5
+Public Sensor3_Lo As Integer = 6
+Public Sensor3_Hi As Integer = 7
+
+
+Public Sub Read_SensorFile(FileName As String, StoreColomn As Integer)
+  Dim dmp1 As String
+  Dim dmp2 As Integer
+  Dim pos As Integer
+  Print "IFM sensor read ini file: " & FileName
+  SensorFileString = File.Load(FileName)
+
+  For dmp2 = 0 To 10 Step 1
+    pos = InStr(SensorFileString, "\n")
+    dmp1 = Left(SensorFileString, pos - 1)
+    SensorFileString = Right(SensorFileString, - pos)
+    Sensor_Array[dmp2, 0] = dmp1
+  Next
+
+End
+
+
+Public Sub Init() As Integer
+  
+'  Dim index As Integer
+  ' Read file with config for sensors
+  Print "IFM sensor init..."
+    Read_SensorFile(InitSensors_Path, Sensor_Ini)    
+
+  'For index = 1 To 10 Step 1
+  '  Print Sensor_Array[index, Sensor_Ini]
+  '  Next
+  SensorIpAddr = Sensor_Array[IpAddress, Sensor_Ini]
+  SensorCount = Sensor_Array[NoOfSensors, Sensor_Ini]
+  Print "Sensor IP Address = " & SensorIpAddr
+  Return 0
+  
+End
+
+
+Public Sub Read(Sensor As String) As Integer
+  
+  Dim ResultSensor As Integer
+  Dim SensorAddr As Integer
+  Dim ReturnCode As Integer
+  Dim LevelLo As Integer
+  Dim LevelHi As Integer
+  Dim SensorType As Integer
+  ResultSensor = 0
+  Print "IFM sensor Read: " & Sensor
+  ' figure out which pin:
+  If Sensor = "KaolineLevel"
+    SensorAddr = 1 
+    SensorType = 1
+    LevelLo = Val(Sensor_Array[Sensor1_Lo, Sensor_Ini])
+    LevelHi = Val(Sensor_Array[Sensor1_Hi, Sensor_Ini])
+  Else If Sensor = "OutputLevel"
+    SensorAddr = 2  
+    SensorType = 2
+    LevelLo = Val(Sensor_Array[Sensor2_Lo, Sensor_Ini])
+    LevelHi = Val(Sensor_Array[Sensor2_Hi, Sensor_Ini])
+  Else If Sensor = "SeparatorLevel"
+    SensorAddr = 3  
+    SensorType = 1
+    LevelLo = Val(Sensor_Array[Sensor3_Lo, Sensor_Ini])
+    LevelHi = Val(Sensor_Array[Sensor3_Hi, Sensor_Ini])
+ Else
+    Print "no valid input in IFM.Read: " & Sensor
+    Return 0
+  Endif
+
+  ReturnCode = IFM_Read_Sensor(SensorAddr, SensorCount, SensorIpAddr, SensorType, VarPtr(ResultSensor))
+  'TestLevelSensors.ResultSensorKaoline = ResultSensor
+  'TestLevelSensors.ResultSensorSeparator = ResultSensor
+  'TestLevelSensors.ResultSensorOutput = ResultSensor
+
+  If SensorType = 1 Then
+    If (ResultOld[SensorAddr] = 0) And (ResultSensor > LevelHi)
+      ResultOld[SensorAddr] = 1
+      Return 1
+    Else If (ResultOld[SensorAddr] = 1) And (ResultSensor < LevelLo)
+      ResultOld[SensorAddr] = 0
+      Return 0
+    Else
+      Return ResultOld[SensorAddr] 
+    Endif
+  Else
+    If (ResultOld[SensorAddr] = 0) And (ResultSensor > LevelHi)
+      ResultOld[SensorAddr] = 1
+      Return 0
+    Else If (ResultOld[SensorAddr] = 1) And (ResultSensor < LevelLo)
+      ResultOld[SensorAddr] = 0
+      Return 1
+    Else
+      If ResultOld[SensorAddr] = 1 Then
+        Return 0
+      Else
+        Return 1
+      Endif
+    Endif
+    
+  Endif
+End
+
+
+    

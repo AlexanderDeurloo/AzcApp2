@@ -1,5 +1,8 @@
 ~/Settings/AZC.ini
 /home/pi/Settings/mix1.rcp
+IFM sensor init...
+IFM sensor read ini file: ~/Settings/AZC_Sensors.ini
+Sensor IP Address = 192.168.1.200
 let's connect to Cpu
 Serial name for cpu comm is /dev/CPU_PORT
 Wait until light show is done. 2.
@@ -11,6 +14,13 @@ Stop bowl motor
 clean flag = 
 false
 WaterFillTimeout=25000
+Process start
+IFM sensor Read: SeparatorLevel
+finished
+Process start
+IFM sensor Read: SeparatorLevel
+IFM sensor Read: KaolineLevel
+finished
 Speed to low. Adjusted to 0.5Hz
 Stop bowl motor
 Stirrer speed set to 0 rpm.

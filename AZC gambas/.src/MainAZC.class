@@ -41,7 +41,7 @@ Public Stirrer_High_Speed As Integer = 14 'china
 Public CommPortPlc As Integer = 15 'china
 Public CommPortStirrer As Integer = 16 'china
 Public Auto_Shutdown As Integer = 17
-
+Public SensorsViaBus As Integer = 18
 
 Public Stir_Time As Integer = 1
 Public Magnesium_Fill_Time As Integer = 2
@@ -246,6 +246,7 @@ Public Sub Init_Machine() As Boolean
     Led.Control(Led_BowlClean, "busy")
     Led.Control(Led_StirrerClean, "busy")
     led.Control(Led_SystemError, "busy")
+    IfmSensors.Init()
     StatusBox.Text = "Plc ready..."
     Wait 1
     Print "let's connect to Cpu"  ' debugger
@@ -732,7 +733,8 @@ Public Sub Menu_Recipes_Default_Click()
                   Var_Array[Stirrer_High_Speed, Var_Ini] & "\n" & 'china
                   Var_Array[CommPortPlc, Var_Ini] & "\n" & 'china
                   Var_Array[CommPortStirrer, Var_Ini] & "\n" & 'china
-                  Var_Array[Auto_Shutdown, Var_Ini] & "\n"
+                  Var_Array[Auto_Shutdown, Var_Ini] & "\n" &
+                  Var_Array[SensorsViaBus, Var_Ini] & "\n"
                   
   File.Save(Ini_Path, StringToStore)
   protect = False

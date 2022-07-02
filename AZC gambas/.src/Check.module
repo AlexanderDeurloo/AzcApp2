@@ -215,7 +215,11 @@ End
 Public Sub Kaoline_Level() As String
   Dim Status As Integer
   Dim Reply As String
-  Status = PlcInputs.Read("KaolineLevel")
+  If (MainAZC.Var_Array[MainAZC.SensorsViaBus, 0] = 1) Then
+      Status = IfmSensors.Read("KaolineLevel")
+  Else
+      Status = PlcInputs.Read("KaolineLevel")
+  Endif
   If (Status = 1)
     Reply = "true"
   Else If (Status = 0)
@@ -230,7 +234,11 @@ End
 Public Sub Magnesium_Level() As String
   Dim Status As Integer
   Dim Reply As String
-  Status = PlcInputs.Read("MagnesiumLevel")
+  If (MainAZC.Var_Array[MainAZC.SensorsViaBus, 0] = 1) Then
+      Status = IfmSensors.Read("SeparatorLevel")
+  Else
+    Status = PlcInputs.Read("MagnesiumLevel")
+  Endif
   If (Status = 1)
     Reply = "true"
   Else If (Status = 0)
