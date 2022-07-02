@@ -14,7 +14,7 @@
       Text = Shortcut(("Exit"), "E")
     }
     { Menu_Home_Shutdown Menu
-      Text = Shortcut(("Arm for Shutdown"), "A")
+      Text = Shortcut(("Shutdown machine"), "S")
     }
   }
   { Menu_Recipes Menu
@@ -44,239 +44,271 @@
     { Menu_Adv_Clean_Bowl Menu
       Text = Shortcut(("Clean Bowl"), "B")
     }
+    { Menu_Adv_CleanMagnesium Menu
+      Text = Shortcut(("Clean Magnesium"), "a")
+    }
+    { Menu_Adv_ControlSampleValve Menu
+      Text = Shortcut(("Control Sample Valve"), "V")
+    }
+    { Menu_Adv_ControlMagnesiumValve Menu
+      Text = Shortcut(("Control Magnesium Valve"), "M")
+    }
+    { Menu_Adv_ControlKaolineValve Menu
+      Text = Shortcut(("Control Kaoline Valve"), "K")
+    }
   }
   { Panel2 Panel
-    MoveScaled(94,11,58,113)
+    MoveScaled(70,2,44,84)
     Enabled = False
-    Background = &H244B96&
+    Background = &HA2C61C&
   }
   { Panel1 Panel
-    MoveScaled(6,11,81,53)
+    MoveScaled(2,2,66,47)
     Background = &HFFFFFF&
+    Border = Border.Plain
     { ProgressBar1 ProgressBar
-      MoveScaled(2,37,76,4)
+      MoveScaled(2,35,62,4)
       Background = &HF5F5F5&
       Label = False
     }
   }
   { L_StirTime Label
-    MoveScaled(95,13,28,7)
+    MoveScaled(66,7,28,7)
+    Font = Font["DejaVu Sans,-1"]
     Foreground = Color.White
-    Text = ("Stir Time (s)")
+    Text = ("Stir Time")
     Alignment = Align.Right
   }
   { L_StirrerCleanTime Label
-    MoveScaled(95,87,28,7)
+    MoveScaled(66,52,28,7)
+    Font = Font["DejaVu Sans,-1"]
     Foreground = Color.White
-    Text = ("Stirrer Clean Time(s)")
+    Text = ("Stirrer Clean Time")
     Alignment = Align.Right
   }
   { L_MagFillTime Label
-    MoveScaled(95,22,28,7)
+    MoveScaled(66,13,28,7)
+    Font = Font["DejaVu Sans,-1"]
     Foreground = Color.White
-    Text = ("Magnesium Fill Time(s)")
+    Text = ("Magnesium Fill Time")
     Alignment = Align.Right
   }
   { SP_StirrerCleanTime SpinBox
-    MoveScaled(124,87,10,7)
+    MoveScaled(100,53,10,5)
     Enabled = False
-    Font = Font["Bold,+4"]
+    Font = Font["Bold"]
     MinValue = 3
     MaxValue = 600
-    Value = 1000
+    Value = 600
   }
   { ProgressElapsedTimer #Timer
+    #MoveScaled(9,79)
   }
   { SP_StirTime SpinBox
-    MoveScaled(124,13,10,7)
+    MoveScaled(100,8,10,5)
     Enabled = False
-    Font = Font["Bold,+4"]
+    Font = Font["Bold"]
     MinValue = 5
     MaxValue = 300
     Value = 10
   }
   { SP_MagFillTime SpinBox
-    MoveScaled(124,22,10,7)
+    MoveScaled(100,14,10,5)
     Enabled = False
-    Font = Font["Bold,+4"]
+    Font = Font["Bold"]
     MinValue = 1
     MaxValue = 300
     Value = 10
   }
   { StatusBox TextBox
-    MoveScaled(8,37,76,5)
+    MoveScaled(4,30,62,5)
+    Font = Font["DejaVu Sans"]
     Text = ("Initializing") & "..."
     Alignment = Align.Center
     ReadOnly = True
   }
   { StartButton Button
-    MoveScaled(23,18,12,12)
+    MoveScaled(14,13,12,12)
     ToolTip = ("Click to RUN")
     Picture = Picture["play.png"]
   }
   { StopButton Button
-    MoveScaled(59,19,11,11)
+    MoveScaled(43,14,11,11)
     Picture = Picture["stop.png"]
   }
   { Processes TextBox
-    MoveScaled(46,54,9,4)
+    MoveScaled(37,42,9,4)
     Text = ("0")
     ReadOnly = True
   }
   { LabelProcesses Label
-    MoveScaled(33,54,12,4)
+    MoveScaled(23,42,14,4)
+    Font = Font["DejaVu Sans"]
     Background = Color.White
     Foreground = &H202020&
     Text = ("Processed:")
   }
   { L_KaolineTime Label
-    MoveScaled(95,49,28,7)
+    MoveScaled(71,31,23,7)
+    Font = Font["DejaVu Sans,-1"]
     Foreground = Color.White
-    Text = ("Kaoline Fill Time (s)")
+    Text = ("Kaoline Fill Time")
     Alignment = Align.Right
   }
   { L_SampleTime Label
-    MoveScaled(95,40,28,7)
+    MoveScaled(71,25,23,7)
+    Font = Font["DejaVu Sans,-1"]
     Foreground = Color.White
-    Text = ("Sample Time(s)")
+    Text = ("Sample Time")
     Alignment = Align.Right
   }
   { L_BowlCleanPhase3Time Label
-    MoveScaled(95,114,28,7)
+    MoveScaled(66,70,28,7)
+    Font = Font["DejaVu Sans,-1"]
     Foreground = Color.White
-    Text = ("Bowl Clean Phase3 Time(s)")
+    Text = ("Bowl Clean Phase3 Time")
     Alignment = Align.Right
   }
   { SP_SampleTime SpinBox
-    MoveScaled(124,40,10,7)
+    MoveScaled(100,26,10,5)
     Enabled = False
-    Font = Font["Bold,+4"]
+    Font = Font["Bold"]
     MinValue = 1
     MaxValue = 600
     Value = 10
   }
   { SP_KaolineFillTime SpinBox
-    MoveScaled(124,49,10,7)
+    MoveScaled(100,32,10,5)
     Enabled = False
-    Font = Font["Bold,+4"]
+    Font = Font["Bold"]
     MinValue = 1
     MaxValue = 300
     Value = 10
   }
   { SP_BowlCleanPhase3Time SpinBox
-    MoveScaled(124,114,10,7)
+    MoveScaled(100,71,10,5)
     Enabled = False
-    Font = Font["Bold,+4"]
+    Font = Font["Bold"]
     MinValue = 3
     MaxValue = 600
     Value = 10
   }
   { L_BowlWaterFillTime Label
-    MoveScaled(95,31,28,7)
+    MoveScaled(66,20,28,7)
+    Font = Font["DejaVu Sans,-1"]
     Foreground = Color.White
-    Text = ("Bowl Water Fill Time(s)")
+    Text = ("Bowl Water Fill Time")
     Alignment = Align.Right
   }
   { L_Bowl_Clean_Phase2_Time Label
-    MoveScaled(95,105,28,7)
+    MoveScaled(61,64,33,7)
+    Font = Font["DejaVu Sans,-1"]
     Foreground = Color.White
-    Text = ("Bowl Clean Phase2 Time(s)")
+    Text = ("Bowl Clean Phase2 Time")
     Alignment = Align.Right
   }
   { SP_BowlWaterFillTime SpinBox
-    MoveScaled(124,31,10,7)
+    MoveScaled(100,20,10,5)
     Enabled = False
-    Font = Font["Bold,+4"]
+    Font = Font["Bold"]
     MinValue = 1
     MaxValue = 600
     Value = 10
   }
   { SP_BowlCleanPhase2Time SpinBox
-    MoveScaled(124,105,10,7)
+    MoveScaled(100,65,10,5)
     Enabled = False
-    Font = Font["Bold,+4"]
+    Font = Font["Bold"]
     MinValue = 3
     MaxValue = 600
     Value = 10
   }
   { L_CentrifugeTime Label
-    MoveScaled(95,58,28,7)
+    MoveScaled(71,37,23,7)
+    Font = Font["DejaVu Sans,-1"]
     Foreground = Color.White
-    Text = ("Centrifuge Time(s)")
+    Text = ("Centrifuge Time")
     Alignment = Align.Right
   }
   { L_OutputCaptureTime Label
-    MoveScaled(95,66,28,7)
+    MoveScaled(66,43,28,7)
+    Font = Font["DejaVu Sans,-1"]
     Foreground = Color.White
-    Text = ("Output Capture Time(s)")
+    Text = ("Output Capture Time")
     Alignment = Align.Right
   }
   { L_BowlCleanPhase1Time Label
-    MoveScaled(95,96,28,7)
+    MoveScaled(61,58,33,7)
+    Font = Font["DejaVu Sans,-1"]
     Foreground = Color.White
-    Text = ("Bowl Clean Phase1 Time(s)")
+    Text = ("Bowl Clean Phase1 Time")
     Alignment = Align.Right
   }
   { SP_OutputCaptureTime SpinBox
-    MoveScaled(124,67,10,7)
+    MoveScaled(100,44,10,5)
     Enabled = False
-    Font = Font["Bold,+4"]
+    Font = Font["Bold"]
     MinValue = 20
     MaxValue = 300
-    Value = 10
+    Value = 20
   }
   { SP_CentrifugeTime SpinBox
-    MoveScaled(124,58,10,7)
+    MoveScaled(100,38,10,5)
     Enabled = False
-    Font = Font["Bold,+4"]
+    Font = Font["Bold"]
     MinValue = 1
     MaxValue = 600
     Value = 10
   }
   { SP_BowlCleanPhase1Time SpinBox
-    MoveScaled(124,96,10,7)
+    MoveScaled(100,59,10,5)
     Enabled = False
-    Font = Font["Bold,+4"]
+    Font = Font["Bold"]
     MinValue = 3
     MaxValue = 600
     Value = 10
   }
   { Panel3 Panel
-    MoveScaled(51,71,36,25)
+    MoveScaled(43,51,25,24)
     Background = &H121212&
   }
   { L_Res_Magnesium Label
-    MoveScaled(64,74,22,4)
+    MoveScaled(50,52,18,4)
+    Font = Font["DejaVu Sans,-1"]
     Foreground = Color.White
     Text = ("Magnesium Level ")
     Alignment = Align.Left
   }
   { L_Res_Kaoline Label
-    MoveScaled(64,78,22,4)
+    MoveScaled(50,56,15,4)
+    Font = Font["DejaVu Sans,-1"]
     Foreground = Color.White
     Text = ("Kaoline Level ")
     Alignment = Align.Left
   }
   { L_SystemError Label
-    MoveScaled(64,90,22,4)
+    MoveScaled(50,68,15,4)
+    Font = Font["DejaVu Sans,-1"]
     Foreground = Color.White
     Text = ("System Error ")
     Alignment = Align.Left
   }
   { L_StirrerClean Label
-    MoveScaled(64,82,22,4)
+    MoveScaled(50,60,14,4)
+    Font = Font["DejaVu Sans,-1"]
     Foreground = Color.White
     Text = ("Stirrer Clean ")
     Alignment = Align.Left
   }
   { L_BowlClean Label
-    MoveScaled(64,86,22,4)
+    MoveScaled(50,64,13,4)
+    Font = Font["DejaVu Sans,-1"]
     Foreground = Color.White
     Text = ("Bowl Clean ")
     Alignment = Align.Left
   }
   { Led_MagLevel DrawingArea
-    MoveScaled(58,74,4,4)
+    MoveScaled(45,53,4,4)
     Background = &H121212&
     Foreground = Color.DarkRed
     Cached = True
@@ -286,7 +318,7 @@
     }
   }
   { Led_KaolineLevel DrawingArea
-    MoveScaled(58,78,4,4)
+    MoveScaled(45,57,4,4)
     Background = &H121212&
     Cached = True
     { Led_StirTime4 DrawingArea
@@ -295,7 +327,7 @@
     }
   }
   { Led_StirrerClean DrawingArea
-    MoveScaled(58,82,4,4)
+    MoveScaled(45,61,4,4)
     Background = &H121212&
     Cached = True
     { Led_StirTime6 DrawingArea
@@ -304,7 +336,7 @@
     }
   }
   { Led_BowlClean DrawingArea
-    MoveScaled(58,86,4,4)
+    MoveScaled(45,65,4,4)
     Background = &H121212&
     Cached = True
     { Led_StirTime8 DrawingArea
@@ -313,7 +345,7 @@
     }
   }
   { Led_SystemError DrawingArea
-    MoveScaled(58,90,4,4)
+    MoveScaled(45,69,4,4)
     Background = &H121212&
     Cached = True
     { Led_StirTime10 DrawingArea
@@ -322,162 +354,207 @@
     }
   }
   { MainDelay #Timer
-    #MoveScaled(8,0)
+    #MoveScaled(17,79)
     Delay = 9
   }
   { StirClean_Min Button
-    MoveScaled(132,87,7,7)
+    MoveScaled(95,53,5,5)
     Enabled = False
-    Font = Font["+6"]
+    Font = Font["DejaVu Sans,+3"]
     Text = ("-")
   }
   { Stir_Min Button
-    MoveScaled(132,13,7,7)
+    MoveScaled(95,8,5,5)
     Enabled = False
-    Font = Font["+6"]
+    Font = Font["DejaVu Sans,+3"]
     Text = ("-")
   }
   { StirClean_Plus Button
-    MoveScaled(139,87,7,7)
+    MoveScaled(107,53,5,5)
     Enabled = False
-    Font = Font["+6"]
+    Font = Font["DejaVu Sans,+3"]
     Text = ("+")
   }
   { Stir_Plus Button
-    MoveScaled(139,13,7,7)
+    MoveScaled(107,8,5,5)
     Enabled = False
-    Font = Font["+6"]
+    Font = Font["DejaVu Sans,+3"]
     Text = ("+")
   }
   { MagnFill_Plus Button
-    MoveScaled(139,22,7,7)
+    MoveScaled(107,14,5,5)
     Enabled = False
-    Font = Font["+6"]
+    Font = Font["DejaVu Sans,+3"]
     Text = ("+")
   }
   { MagnFill_Min Button
-    MoveScaled(132,22,7,7)
+    MoveScaled(95,14,5,5)
     Enabled = False
-    Font = Font["+6"]
+    Font = Font["DejaVu Sans,+3"]
     Text = ("-")
   }
   { BowlWaterFill_Min Button
-    MoveScaled(132,31,7,7)
+    MoveScaled(95,20,5,5)
     Enabled = False
-    Font = Font["+6"]
+    Font = Font["DejaVu Sans,+3"]
     Text = ("-")
   }
   { Sample_Min Button
-    MoveScaled(132,40,7,7)
+    MoveScaled(95,26,5,5)
     Enabled = False
-    Font = Font["+6"]
+    Font = Font["DejaVu Sans,+3"]
     Text = ("-")
   }
   { Kaoline_Min Button
-    MoveScaled(132,49,7,7)
+    MoveScaled(95,32,5,5)
     Enabled = False
-    Font = Font["+6"]
+    Font = Font["DejaVu Sans,+3"]
     Text = ("-")
   }
   { Centrifuge_Min Button
-    MoveScaled(132,58,7,7)
+    MoveScaled(95,38,5,5)
     Enabled = False
-    Font = Font["+6"]
+    Font = Font["DejaVu Sans,+3"]
     Text = ("-")
   }
   { OutputCapture_Min Button
-    MoveScaled(132,67,7,7)
+    MoveScaled(95,44,5,5)
     Enabled = False
-    Font = Font["+6"]
+    Font = Font["DejaVu Sans,+3"]
     Text = ("-")
   }
   { BowlCleanPhase3_Min Button
-    MoveScaled(132,114,7,7)
+    MoveScaled(95,71,5,5)
     Enabled = False
-    Font = Font["+6"]
+    Font = Font["DejaVu Sans,+3"]
     Text = ("-")
   }
   { BowlCleanPhase1_Min Button
-    MoveScaled(132,96,7,7)
+    MoveScaled(95,59,5,5)
     Enabled = False
-    Font = Font["+6"]
+    Font = Font["DejaVu Sans,+3"]
     Text = ("-")
   }
   { BowlCleanPhase2_Min Button
-    MoveScaled(132,105,7,7)
+    MoveScaled(95,65,5,5)
     Enabled = False
-    Font = Font["+6"]
+    Font = Font["DejaVu Sans,+3"]
     Text = ("-")
   }
   { Sample_Plus Button
-    MoveScaled(139,40,7,7)
+    MoveScaled(107,26,5,5)
     Enabled = False
-    Font = Font["+6"]
+    Font = Font["DejaVu Sans,+3"]
     Text = ("+")
   }
   { Kaoline_Plus Button
-    MoveScaled(139,49,7,7)
+    MoveScaled(107,32,5,5)
     Enabled = False
-    Font = Font["+6"]
+    Font = Font["DejaVu Sans,+3"]
     Text = ("+")
   }
   { Centrifuge_Plus Button
-    MoveScaled(139,58,7,7)
+    MoveScaled(107,38,5,5)
     Enabled = False
-    Font = Font["+6"]
+    Font = Font["DejaVu Sans,+3"]
     Text = ("+")
   }
   { BowlCleanPhase1_Plus Button
-    MoveScaled(139,96,7,7)
+    MoveScaled(107,59,5,5)
     Enabled = False
-    Font = Font["+6"]
+    Font = Font["DejaVu Sans,+3"]
     Text = ("+")
   }
   { BowlCleanPhase3_Plus Button
-    MoveScaled(139,114,7,7)
+    MoveScaled(107,71,5,5)
     Enabled = False
-    Font = Font["+6"]
+    Font = Font["DejaVu Sans,+3"]
     Text = ("+")
   }
   { BowlCleanPhase2_Plus Button
-    MoveScaled(139,105,7,7)
+    MoveScaled(107,65,5,5)
     Enabled = False
-    Font = Font["+6"]
+    Font = Font["DejaVu Sans,+3"]
     Text = ("+")
   }
   { BowlWaterFill_Plus Button
-    MoveScaled(139,31,7,7)
+    MoveScaled(107,20,5,5)
     Enabled = False
-    Font = Font["+6"]
+    Font = Font["DejaVu Sans,+3"]
     Text = ("+")
   }
   { OutputCapture_Plus Button
-    MoveScaled(139,67,7,7)
+    MoveScaled(107,44,5,5)
     Enabled = False
-    Font = Font["+6"]
+    Font = Font["DejaVu Sans,+3"]
     Text = ("+")
   }
   { LabelStart Label
-    MoveScaled(26,31,6,4)
+    MoveScaled(16,25,8,4)
+    Font = Font["DejaVu Sans,+2"]
     Background = Color.White
     Foreground = &H202020&
     Text = ("Start")
   }
   { LabelStop Label
-    MoveScaled(63,31,6,4)
+    MoveScaled(45,25,8,4)
+    Font = Font["DejaVu Sans,+2"]
     Background = Color.White
     Foreground = &H202020&
     Text = ("Stop")
   }
   { PictureBox1 PictureBox
-    MoveScaled(5,70,45,26)
-    Picture = Picture["LogoJkiBlack.png"]
+    MoveScaled(2,50,39,23)
+    Picture = Picture["ilvo.png"]
     Stretch = True
   }
   { LabelManufacturer Label
-    MoveScaled(6,118,83,4)
+    MoveScaled(24,77,38,9)
+    Font = Font["DejaVu Sans,-1"]
     Background = &HF5F5F5&
     Foreground = &H202020&
-    Text = ("manufactured by MediQuip, The Netherlands          www.NematodeExtraction.com")
+    Text = ("Manufactured by MediQuip\nThe Netherlands\nwww.AutomatedZonalCentrifuge.com")
+    Alignment = Align.Center
+  }
+  { ShutdownButton Button
+    MoveScaled(2,81,5.5556,5.5556)
+    Font = Font["DejaVu Sans,-4"]
+    ToolTip = ("Shutdown machine")
+    Text = (" ")
+    Picture = Picture["powerbutton.png"]
+  }
+  { L_ProcessTime Label
+    MoveScaled(77,0,28,7)
+    Font = Font["DejaVu Sans,-1"]
+    Foreground = Color.White
+    Text = ("Process settings (in sec)")
+    Alignment = Align.Right
+  }
+  { L_BowlCleanPauseTime Label
+    MoveScaled(66,76,28,7)
+    Font = Font["DejaVu Sans,-1"]
+    Foreground = Color.White
+    Text = ("Bowl Clean Pause Time")
+    Alignment = Align.Right
+  }
+  { SP_BowlCleanPauseTime SpinBox
+    MoveScaled(100,77,10,5)
+    Enabled = False
+    Font = Font["Bold"]
+    MinValue = 5
+    MaxValue = 60
+    Value = 10
+  }
+  { BowlCleanPause_Min Button
+    MoveScaled(95,77,5,5)
+    Enabled = False
+    Font = Font["DejaVu Sans,+3"]
+    Text = ("-")
+  }
+  { BowlCleanPause_Plus Button
+    MoveScaled(107,77,5,5)
+    Enabled = False
+    Font = Font["DejaVu Sans,+3"]
+    Text = ("+")
   }
 }

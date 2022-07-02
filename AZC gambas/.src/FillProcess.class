@@ -183,7 +183,7 @@ Public Sub Fill()
       LastContainer = 1
     Else
       ' move input
-      Search.Next_Input() ' TODO: what is case of ....? is this full proof? check return code
+      Search.Next_Input() ' TODO: what in case of ....? is this foul proof? check return code
     Endif
     Inc ToStir
     FillDone = False

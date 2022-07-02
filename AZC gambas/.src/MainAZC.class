@@ -1,5 +1,7 @@
 ' Gambas class file
 
+Public LogFile As File  ' used to catch "PRINT" after it is redirected via "LogFile = OPEN ... " + "OUTPUT TO LogFile" 
+
 'PUBLIC LevelBit AS Boolean
 Public Protect As Boolean
 Public starttime As Float
@@ -52,7 +54,7 @@ Public Stirrer_Clean_Time As Integer = 8
 Public Bowl_Clean_Phase1_Time As Integer = 9
 Public Bowl_Clean_Phase2_Time As Integer = 10
 Public Bowl_Clean_Phase3_Time As Integer = 11
-
+Public Bowl_Clean_Pause_Time As Integer = 12
 
 Public cancel As Integer
 Public pause As Integer
@@ -62,9 +64,20 @@ Public DumpI As Integer = 0
 
 Public Ini_Path As String = "~/Settings/AZC.ini"
 
+'Public ArmedForShutdown As Boolean
 
 Private ProgressBarDrawArea As DrawingArea
 
+Public Sub GetFileName(FullPath As String) As String
+  
+  Dim PathLength As Integer
+  Dim FileName As String
+  
+  PathLength = Len(Var_Array[Default_Directory, Var_Ini])
+  FileName = Mid$(FullPath, PathLength + 1, 30) ' for now 30 is the max length of the filename
+  
+  Return FileName
+End
 
 
 
@@ -93,51 +106,91 @@ End
 
 Public Sub Menu_Home_About_Click()
   Dim AboutMessage As String
-  AboutMessage = "Zonale Centrifuge.\nMediQuip\nThe Netherlands\nmediquip@kpnplanet.nl"
+  AboutMessage = "Automated Zonal Centrifuge.\nMediQuip\nThe Netherlands\nwww.AutomatedZonalCentrifuge.com"
+  Message.Title = "About"
   Message.info(AboutMessage)
 End
 
 
 Public Sub Menu_Home_Exit_Click()
-  If nogo = False Then PlcOutputs.StirrerRotate("clean")
-
+  Dim KeyPass As String
+  KeyPass = InputBox("Enter key to exit application", "Authorized exit only")
+  If KeyPass <> "123456"
+   Message.Title = "Attention"
+   Message.Error("Wrong key")
+   Return
+  Endif
+  StatusBox.Text = "Exit authorized...please wait"
+  If nogo = False Then StirProcess.MoveStir("clean")
+  ' no shutdown, just ending the application.
   Wait 1
-   Me.Close
+  '  ArmedForShutdown = False
+  ' copy Exit script:
+  Try Kill "/home/pi/AzcSystem/Finalize.sh"
+  Copy "/home/pi/AzcSystem/Exit.sh" To "/home/pi/AzcSystem/Finalize.sh"
+  
+  Me.Close
 End
 
 
 Public Sub Menu_Home_Shutdown_Click()
-  If nogo = False Then PlcOutputs.StirrerRotate("clean")
+   Dim returncode As Integer
+  Message.Title = "Attention"
+  returncode = Message.Question("Shutdown machine?", "Yes, I'm sure", "No, go back please") ' returns 1 for button yes, 2 for button 2 etc.
+  If returncode = 2 Then
+    Return
+  Endif
+
+  If nogo = False Then StirProcess.MoveStir("clean")
 
   Wait 1
-'  IF (Var_Array[Auto_Shutdown, Var_Ini] = "1") THEN 
+' IF (Var_Array[Auto_Shutdown, Var_Ini] = "1") THEN 
   StatusBox.Text = "Machine will switch off automatically."
-      Print " auto down"
-    SerialHandler.TxRxFast("shutdown")
-    Wait 2
- ' ELSE 
-  '  PRINT " don't shutdown"
- ' ENDIF
+  Print " auto down"
+  
+'  ArmedForShutdown = True
+  ' copy shutdwon script:
+  Try Kill "/home/pi/AzcSystem/Finalize.sh"
+  Copy "/home/pi/AzcSystem/Shutdown.sh" To "/home/pi/AzcSystem/Finalize.sh"
+
   Me.Close
 End
 
 
 Public Sub form_Close()
  ' StatusBox.Text = "shutting down..."
-  FreqCtrl.SetFreq(0.0, "OFF") 'debugger
+  SerialCpuComm.TxRxFast("blue", 1)
+  
+  CleanMachine.Magnesium(3)
+
+  SerialCpuComm.TxRxFast("blinkoff", 1)
+  FreqCtrl.SetFreq(0.0, "OFF")
   Stirrer.SetRpm(0)
   Stirrer.CloseComm()
   StatusBox.Text = "Closing program..."
   PlcOutputs.Set("WaterValveHpPump", 0) 
   PlcOutputs.Set("AirBowlCooling", 0)
+  PlcOutputs.Set("KaolineMotorPower", 0)
 
-  'SerialHandler.serial_close()
-  Wait 0.5
+  PlcOutputs.Set("ShutdownIndicator", 1)  ' relay will be open.
+  Wait 1
+  Print "Close Form"
+  Close LogFile
+  
+ ' If ArmedForShutdown = True
+  ' SerialCpuComm.TxRxFast("shutdown", 0)
+  '  Wait 1
+  'Endif
+
 End
 
 
 Public Sub Form_Open()
   Dim Start_Recipe As String
+  
+  LogFile = Open "/home/pi/AzcApp/Log/DebugOutput" For Write Create ' TODO: use date code
+  Output To LogFile
+  
   NoGo = True
   Stirrer_Dirty = False ' debug : save time
   Bowl_Dirty = False  ' debug : save time
@@ -156,7 +209,8 @@ Public Sub Form_Open()
   Start_Recipe = Var_Array[Default_Directory, Var_Ini] & Var_Array[Default_Recipe, Var_Ini]
   Read_File(Start_Recipe, Var_Recipe)  ' load recipe
   Use_Recipe()
-  Me.Text = Start_Recipe
+  
+  Me.Text = GetFileName(Start_Recipe)
   
   StartButton.Enabled = False
 
@@ -178,11 +232,15 @@ End
 
 
 Public Sub Init_Machine() As Boolean
-
-    'Dim i As Integer
-    ' link to PLC
     Dim fillcmd As String
-    Stirrer.OpenComm((Var_Array[CommPortStirrer, Var_Ini]))
+   ' ArmedForShutdown = False
+
+    PlcOutputs.Set("UsbHub", 1) ' just for safety: hub is already enabled by startup script.
+    Wait 0.5
+    PlcOutputs.Set("ShutdownIndicator", 0)  ' relay will be closed.
+    Wait 0.5
+    PlcOutputs.Set("StirrerPower", 1) ' turns on monitor as well
+
     Led.Control(Led_MagLevel, "busy")
     Led.Control(Led_KaolineLevel, "busy")
     Led.Control(Led_BowlClean, "busy")
@@ -196,34 +254,39 @@ Public Sub Init_Machine() As Boolean
       Print "Error in initializing serialcpu\n" 
       Quit
     Endif
-    FreqCtrl.SetFreq(1.0, "OFF") 'debugger
     ReceivedData = SerialCpuComm.TxRxFast("PlcPresent", 0)
     If Comp(ReceivedData, "CpuPresent") <> 0
       Print "Cpu didn't reply properly: " & ReceivedData
       ' give it another shot:
       StatusBox.Text = "Cpu pending..."
       Print "Wait until light show is done. 1."
-      Wait 5  ' at least 4 sec to end the light show.
+      Wait 2  ' at least 4 sec to end the light show.
       ReceivedData = SerialCpuComm.TxRxFast("PlcPresent", 0)
       If Comp(ReceivedData, "CpuPresent") <> 0
         Print "Cpu didn't reply properly: " & ReceivedData
         StatusBox.Text = "Cpu reset..."
         Wait 1
         Print "Reset CPU..."
-          SerialCpuComm.Reset("/dev/ttyACM0")
+          SerialCpuComm.Reset(Var_Array[CommPortPlc, Var_Ini])   
         Print "reset done."
         Wait 5
-        ReceivedData = SerialCpuComm.TxRxFast("PlcPresent", 1)
+        ReceivedData = SerialCpuComm.TxRxFast("PlcPresent", 0)
+        Wait 5
         If Comp(ReceivedData, "CpuPresent") <> 0
-          Message.Error("No contact with Cpu", "Stop")
-          Quit
+          ReceivedData = SerialCpuComm.TxRxFast("PlcPresent", 0)  ' send again
+          If Comp(ReceivedData, "CpuPresent") <> 0
+                  Message.Title = "Attention"
+                  Message.Error("No contact with Cpu", "Stop")
+                  Quit
+          Endif
         Endif
       Endif
     Endif
     Print "Wait until light show is done. 2."
-    Wait 5 ' at least 4 sec to end the light show.
+    Wait 2 ' at least 4 sec to end the light show.
     ReceivedData = SerialCpuComm.TxRxFast("PlcPresent", 1)
     If Comp(ReceivedData, "CpuPresent") <> 0
+      Message.Title = "Attention"
       Message.Error("No proper contact with Cpu", "Stop")
       Quit
     Endif
@@ -232,27 +295,26 @@ Public Sub Init_Machine() As Boolean
     SerialCpuComm.TxRxFast("blue", 1)
     SerialCpuComm.TxRxFast("blinkon", 1)
     Wait 1
-   
+    FreqCtrl.SetFreq(1.0, "OFF")
+
     Print " first tx done"
   
-
-    PlcOutputs.Set("StirrerPower", 1)
-  
-  ' TODO TODO !!!
-    Wait 0.05
-    'Stirrer.SerialOpenStirrer(Var_Array[CommPortStirrer, Var_Ini])   '("/dev/ttyS4") 'china
-    Stirrer.SetRpm(200)
+    PlcOutputs.Shutdown("off")  ' off = relay closed.
     
-    StatusBox.Text = "Stirrer ready"
-    StartButton.Enabled = True
     led.Control(Led_SystemError, "off")
 
     nogo = False
     
-    'Print PlcInputs.Read("AirStirrerLiftRotateBackward")
-    
-    If (PlcInputs.Read("MagnesiumLevel") = 1) Then Led.Control(Led_MagLevel, "on")
-    If (PlcInputs.Read("KaolineLevel") = 1) Then Led.Control(Led_KaolineLevel, "on")
+    If (PlcInputs.Read("MagnesiumLevel") = 1) 
+      Led.Control(Led_MagLevel, "on")
+    Else 
+      Led.Control(Led_MagLevel, "error")
+    Endif
+    If (PlcInputs.Read("KaolineLevel") = 1)
+      Led.Control(Led_KaolineLevel, "on")
+    Else 
+      Led.Control(Led_KaolineLevel, "error")
+    Endif
     Clean_Every_Startup_Flag = False
     
     If Var_Array[Clean_Every_Startup, Var_Ini] = 1 Then Clean_Every_Startup_Flag = True
@@ -284,18 +346,12 @@ Public Sub Init_Machine() As Boolean
     Wait 1
     PlcOutputs.Set("KaolineMotorPower", 1)
 
-    FreqCtrl.SetFreq(2.0, "OFF") 'debugger
-
-    'For i = 0 To i + 14
-    '  Print Check.TubeValve_Kaoline()
-    '  Wait 2
-    'Next
-    'Print Search.Output_Container() 'debugger
     Wait 1
+    'Stirrer.OpenComm((Var_Array[CommPortStirrer, Var_Ini]))
     SerialCpuComm.TxRxFast("blinkoff", 1)
     Set_To_Stop()
     StatusBox.Text = "Machine ready"
-    Stirrer.SetRpm(100)
+    StartButton.Enabled = True
 
 End
 
@@ -305,10 +361,11 @@ Public Sub Process_Start()
     Dim Reply As String
     StopProcess = 0
     Print "Process start"
+    SerialCpuComm.TxRxFast("blinkoff", 1)
     SerialCpuComm.TxRxFast("green", 1)
     Wait 1
     StatusText("Checking levels..")
-
+    Wait 1
     ProcessCTRL.Bowl_Stopped = True
   ' check Mag AND kao levels
     If Check.Magnesium_Level() = "true" Then
@@ -316,6 +373,7 @@ Public Sub Process_Start()
     Else
       Led.Control(Led_MagLevel, "error")
       SerialCpuComm.TxRxFast("red", 1)
+      Message.Title = "Attention"
       Message.Error("Magnesium Level too low")
       Goto Finish
     Endif
@@ -324,9 +382,27 @@ Public Sub Process_Start()
     Else
       Led.Control(Led_KaolineLevel, "error")
       SerialCpuComm.TxRxFast("red", 1)
+      Message.Title = "Attention"
       Message.Error("Kaoline Level too low")
       Goto Finish
     Endif
+    
+    StatusText("Checking Kaoline...")
+    Wait 1
+    If Check.Kaoline_Motor() = "false" Then
+      SerialCpuComm.TxRxFast("red", 1)
+      Message.Title = "Attention"
+      Message.Error("Kaoline motor not connected")
+      Goto Finish
+    Endif
+    
+    If PlcInputs.Read("StirrerCoverClosed") = 0 Then
+      SerialCpuComm.TxRxFast("red", 1)
+      Message.Title = "Attention"
+      Message.Error("Stirrer rear cover not closed.")
+      Goto Finish
+    Endif
+
   ' synchronize machine
     StatusText("Synchronize machine..")
     i = SyncMachine.Go()
@@ -340,10 +416,12 @@ Public Sub Process_Start()
     Reply = Search.Input_Container()
     If Reply = "ERR" Then
       SerialCpuComm.TxRxFast("red", 1)
+      Message.Title = "Attention"
       Message.Error("No container at input detected")
       Goto Finish   ' was return
     Else If Reply = "TimeOut" Then
       SerialCpuComm.TxRxFast("red", 1)
+      Message.Title = "Attention"
       Message.Error("Timeout during input container search")
       Goto Finish   ' was return
     Endif
@@ -352,6 +430,7 @@ Public Sub Process_Start()
     ' search for output container
     If Search.Output_Container() = "ERR" Then
       SerialCpuComm.TxRxFast("red", 1)
+      Message.Title = "Attention"
       Message.Error("No container at output detected")
       Goto Finish   ' was return
     Endif
@@ -361,22 +440,31 @@ Public Sub Process_Start()
 
   Processes.Text = 0    ' reset counter
   ProgressBar1.Value = 0
-  ProcessCTRL.Go()
+  ProcessCTRL.Go()  ' the actual process
  
 Finish:
   Print "finished"
   ' in case of stop button:
   If StopProcess = 1 Then
     Stop_Process()
+  Else
+    SerialCpuComm.TxRxFast("green", 1)
+    SerialCpuComm.TxRxFast("blinkon", 1)
   Endif
   Wait 0.5
-  SerialCpuComm.TxRxFast("blue", 1)
   Set_To_Stop() ' buttons, etc
+  Message.Title = "Done"
+  Message.Info("Process finished")
+  SerialCpuComm.TxRxFast("blue", 1)
+  SerialCpuComm.TxRxFast("blinkoff", 1)
   StatusBox.Text = "Ready"
   Return
 End
 
 Public Sub Stop_Process()     ' called after a function if "stop" was pressed.
+  SerialCpuComm.TxRxFast("white", 1)
+  SerialCpuComm.TxRxFast("blinkon", 1)
+
   CleanMachine.STOP_TIMERS()
   ProcessCTRL.STOP_TIMERS()
   ProcessCTRL.Stop_All()
@@ -385,6 +473,7 @@ Public Sub Stop_Process()     ' called after a function if "stop" was pressed.
   
   Wait 0.5
   ' display message with consequences
+  Message.Title = "Attention"
   Message.Error("Machine could be in an undefined state now.\nPlease check input and output containers.", "Done")
   MainAZC.StopProcess = 0
 End
@@ -424,6 +513,9 @@ Public Sub StopButton_Click()
   StatusBox.text = "Stopping machine...  Please wait..."
   OperatorChoose = "stop"   ' global indicator
   StopProcess = 1   ' indicates a request to stop (captured by processCTRL)
+  SerialCpuComm.TxRxFast("purple", 1)
+  SerialCpuComm.TxRxFast("blinkon", 1)
+
 End
 
 
@@ -440,6 +532,7 @@ Public Sub Set_To_Disable()   ' disable all buttons. To Do: disable all menus
   StopButton.Enabled = False
   StopButton.ToolTip = ""
   ProgressElapsedTimer.Enabled = False
+  ShutdownButton.Enabled = False
 End
 
 
@@ -449,6 +542,7 @@ Public Sub Set_To_Run()   ' buttons related
   Menu_Home.Enabled = False
   Menu_Recipes.Enabled = False
   Menu_Adv.Enabled = False
+  ShutdownButton.Enabled = False
   
   StartButton.Enabled = False
   StartButton.ToolTip = ""
@@ -466,7 +560,7 @@ Public Sub Set_To_Stop()    ' buttons related
   Menu_Home.Enabled = True
   Menu_Recipes.Enabled = True
   Menu_Adv.Enabled = True
-
+  ShutdownButton.Enabled = True
   StartButton.Enabled = True
   StartButton.ToolTip = "Click to RUN"
 
@@ -474,7 +568,6 @@ Public Sub Set_To_Stop()    ' buttons related
   StopButton.ToolTip = ""
   ProgressElapsedTimer.Enabled = False
   StatusBox.Text = "STOPPED"
-  'Progress.Display(BarArea, 0)
   
   ProgressBar1.Value = 0
 End
@@ -494,6 +587,7 @@ Public Sub Menu_Recipes_Unlock_Click()   ' arms timer. On expire the leds are dr
     SP_BowlCleanPhase1Time.Enabled = False
     SP_BowlCleanPhase2Time.Enabled = False
     SP_BowlCleanPhase3Time.Enabled = False
+    SP_BowlCleanPauseTime.Enabled = False
     PlusMinEnable(False)    
 
     Menu_Recipes_Default.Enabled = False
@@ -512,6 +606,7 @@ Public Sub Menu_Recipes_Unlock_Click()   ' arms timer. On expire the leds are dr
     SP_BowlCleanPhase1Time.Enabled = True
     SP_BowlCleanPhase2Time.Enabled = True
     SP_BowlCleanPhase3Time.Enabled = True
+    SP_BowlCleanPauseTime.Enabled = True
     PlusMinEnable(True)    
 
     Menu_Recipes_Default.Enabled = True
@@ -521,16 +616,17 @@ Public Sub Menu_Recipes_Unlock_Click()   ' arms timer. On expire the leds are dr
   Endif
 End
 
+
 Public Sub ProgressElapsedTimer_Timer()
   Dim elapsed As Integer
   Dim currenttime As Float
+  
   currenttime = Timer()
-  elapsed = currenttime - starttime
-  'elapsed = DateDiff(starttime, currenttime, gb.Second) / overalltime * 100
-  'Progress.Display(BarArea, elapsed)
-  ProgressBar1.Value = elapsed / 100
-  Print "elapsed = " & elapsed 'debugger
+  elapsed = currenttime - starttime ' seconds so far
+  
+  ProgressBar1.Value = 1 - ((overalltime - elapsed) / overalltime)
 End
+
 
 Public Sub CTRL_Progress_Timer(state As Boolean)
   starttime = Timer()
@@ -543,11 +639,12 @@ Public Sub Menu_Recipes_Load_Click()
   Dialog.Filter = ["*.rcp", "Recipe Files"]
   If Dialog.OpenFile() Then Return
   Read_File(Dialog.Path, Var_Recipe)
-  MainAZC.text = Dialog.Path                   ' modify the header of the screen, so the user can see which file is used.
+  MainAZC.text = GetFileName(Dialog.Path)                   ' modify the header of the screen, so the user can see which file is used.
   protect = False
   Menu_Recipes_Unlock_Click()
   Use_Recipe()
   Catch
+    Message.Title = "Attention"
     Message.Info(Error.Text)
 End
 
@@ -565,7 +662,8 @@ Public Sub Menu_Recipes_Save_Click()
                   SP_StirrerCleanTime.Value & "\n" &
                   SP_BowlCleanPhase1Time.Value & "\n" &
                   SP_BowlCleanPhase2Time.Value & "\n" &
-                  SP_BowlCleanPhase3Time.Value & "\n"
+                  SP_BowlCleanPhase3Time.Value & "\n" &
+                  SP_BowlCleanPauseTime.Value & "\n"
   
   Dialog.Path = MainAZC.Var_Array[Default_Directory, Var_Ini]
   Print "path is " & Dialog.Path
@@ -582,10 +680,11 @@ Public Sub Menu_Recipes_Save_Click()
     Dialog.Path = Dialog.Path & ".rcp"
   Endif
   File.Save(Dialog.Path, StringToStore)
-  MainAZC.text = Dialog.Path                   ' modify the header of the screen, so the user can see which file is used.
+  MainAZC.text = GetFileName(Dialog.Path)                   ' modify the header of the screen, so the user can see which file is used.
   protect = False
   Menu_Recipes_Unlock_Click()
   Catch
+    Message.Title = "Attention"
     Message.Info(Error.Text)
 End
 
@@ -602,6 +701,8 @@ Public Sub Use_Recipe()
   SP_BowlCleanPhase1Time.Value = Val(Var_Array[Bowl_Clean_Phase1_Time, Var_Recipe])
   SP_BowlCleanPhase2Time.Value = Val(Var_Array[Bowl_Clean_Phase2_Time, Var_Recipe])
   SP_BowlCleanPhase3Time.Value = Val(Var_Array[Bowl_Clean_Phase3_Time, Var_Recipe])
+  SP_BowlCleanPauseTime.Value = Val(Var_Array[Bowl_Clean_Pause_Time, Var_Recipe])
+  
 End
 
 
@@ -681,12 +782,12 @@ End
 
 Public Sub Menu_Adv_Clean_Stirrer_Click()
   Set_To_Disable()
-  SerialCpuComm.TxRxFast("blue", 1)
+  SerialCpuComm.TxRxFast("green", 1)
+  SerialCpuComm.TxRxFast("blinkoff", 1)
   StatusBox.Text = "Cleaning Stirrer"
   Led.Control(Led_StirrerClean, "busy")
   Print "setup stir clean"
   MainAZC.Fill_Time_Table() ' loads all timer settings in variables.
-  SerialCpuComm.TxRxFast("red", 1)
   
   'CleanMachine.Stir_Clean_Pending = FALSE
   CleanMachine.Stir_Clean_Setup = False
@@ -696,8 +797,11 @@ Public Sub Menu_Adv_Clean_Stirrer_Click()
   CleanMachine.All(True)  ' true means: skip bowl
 
   Led.Control(Led_StirrerClean, "on")
-  Print "lamp off"
-  SerialCpuComm.TxRxFast("green", 1)
+  SerialCpuComm.TxRxFast("blinkon", 1)
+  Message.Title = "Finished"
+  Message.Info("Stirrer clean done.")
+  SerialCpuComm.TxRxFast("blinkoff", 1)
+  SerialCpuComm.TxRxFast("blue", 1)
   Set_To_Stop()
   StatusBox.Text = "Ready"
 End
@@ -705,19 +809,22 @@ End
 
 Public Sub Menu_Adv_Clean_Bowl_Click()
   Set_To_Disable()
-  SerialCpuComm.TxRxFast("blue", 1)
+  SerialCpuComm.TxRxFast("green", 1)
+  SerialCpuComm.TxRxFast("blinkoff", 1)
   StatusBox.Text = "Cleaning Bowl"
   Led.Control(Led_BowlClean, "busy")
   Print "setup bowl clean"
   MainAZC.Fill_Time_Table() ' loads all timer settings in variables.
-  SerialCpuComm.TxRxFast("red", 1)
   MainAZC.update_leds()
   ProcessCTRL.Bowl_Stopped = True
   CleanMachine.Bowl_Setup()
   Print "setup bowl done"
   Led.Control(Led_BowlClean, "on")
-  Print "lamp off"
-  SerialCpuComm.TxRxFast("green", 1)
+  SerialCpuComm.TxRxFast("blinkon", 1)
+  Message.Title = "Finished"
+  Message.Info("Bowl clean done.")
+  SerialCpuComm.TxRxFast("blinkoff", 1)
+  SerialCpuComm.TxRxFast("blue", 1)
   Set_To_Stop()
   StatusBox.Text = "Ready"
 End
@@ -737,13 +844,14 @@ Public Sub Fill_Time_Table()
   TimeTable.Bowl_Clean_Phase1_Time = SP_BowlCleanPhase1Time.Value * 1000
   TimeTable.Bowl_Clean_Phase2_Time = SP_BowlCleanPhase2Time.Value * 1000
   TimeTable.Bowl_Clean_Phase3_Time = SP_BowlCleanPhase3Time.Value * 1000
+  TimeTable.Bowl_Clean_Pause_Time = SP_BowlCleanPauseTime.Value * 1000
   
   TimeTable.Kaoline_Valve_Clean_Time = Val(Var_Array[Kaoline_Clean_Time, Var_Ini]) '* 100 'china: added 1000 to make sec
   TimeTable.Motor_ACC = Val(Var_Array[Motor_ACC_Time, Var_Ini]) * 1000
   TimeTable.Motor_DEC = Val(Var_Array[Motor_DEC_Time, Var_Ini]) * 1000
   TimeTable.Tube_Clean = Val(Var_Array[Tube_Clean_Time, Var_Ini]) * 1000
   
-  overalltime = (SP_StirTime.Value + SP_MagFillTime.Value + SP_BowlWaterFillTime.Value + SP_SampleTime.Value + SP_KaolineFillTime.Value + SP_CentrifugeTime.Value + SP_OutputCaptureTime.Value + Val(Var_Array[Motor_ACC_Time, Var_Ini]) + 30) ' 30 seconds is for movements
+  overalltime = (SP_StirTime.Value + SP_MagFillTime.Value + SP_BowlWaterFillTime.Value + SP_SampleTime.Value + SP_KaolineFillTime.Value + SP_CentrifugeTime.Value + SP_OutputCaptureTime.Value + Val(Var_Array[Motor_ACC_Time, Var_Ini]) + 150) ' 150 seconds is for movements
   Print "overalltime = " & overalltime
   
 End
@@ -755,19 +863,18 @@ End
 
 Public Sub Menu_Adv_Clean_Sample_Filter_Click()
   Set_To_Disable()
-  SerialCpuComm.TxRxFast("blue", 1)
+  SerialCpuComm.TxRxFast("yellow", 1)
   StatusBox.Text = "Manual clean sample filter"
   Led.Control(Led_BowlClean, "busy")
   Print "setup manual sample filter clean"
-  SerialCpuComm.TxRxFast("red", 1)
   MainAZC.update_leds()
   StirProcess.MoveStirCleanFilter()
   Wait 2
+  Message.Title = ""
   Message.Question("Done?")
   Print "manual sample filter clean done"
   StirProcess.MoveStir("clean")
-  Print "lamp off"
-  SerialCpuComm.TxRxFast("green", 1)
+  SerialCpuComm.TxRxFast("blue", 1)
   Set_To_Stop()
   StatusBox.Text = "Ready"
 End
@@ -799,7 +906,8 @@ Public Sub PlusMinEnable(Setting As Boolean)
     BowlCleanPhase2_Plus.Enabled = Setting
     BowlCleanPhase3_Min.Enabled = Setting
     BowlCleanPhase3_Plus.Enabled = Setting
-
+    BowlCleanPause_Min.Enabled = Setting
+    BowlCleanPause_Plus.Enabled = Setting
 End
 
 
@@ -878,7 +986,67 @@ Public Sub BowlCleanPhase3_Min_Click()
 End
 Public Sub BowlCleanPhase3_Plus_Click()
   Inc SP_BowlCleanPhase3Time.Value
-  ProgressBar1.Value = ProgressBar1.Value + 0.01 'debugger
+End
+Public Sub BowlCleanPause_Min_Click()
+  Dec SP_BowlCleanPauseTime.Value
+End
+Public Sub BowlCleanPause_Plus_Click()
+  Inc SP_BowlCleanPauseTime.Value
+End
+
+
+Public Sub ShutdownButton_Click()
+  Menu_Home_Shutdown_Click()
+End
+
+
+Public Sub Menu_Adv_ControlSampleValve_Click()
+  Dim KeyPress As Integer
+  Message.Title = "Valve"
+  Do
+    KeyPress = Message.Question("Sample", "Open", "Close", "Exit")
+    If KeyPress = 1
+      PlcOutputs.Set("AirTubeValveSample", 1)
+    Else If (KeyPress = 2)
+      PlcOutputs.Set("AirTubeValveSample", 0)
+    Endif
+  Loop Until KeyPress = 3
+  PlcOutputs.Set("AirTubeValveSample", 0)
+End
+
+Public Sub Menu_Adv_ControlMagnesiumValve_Click()
+  Dim KeyPress As Integer
+  Message.Title = "Valve"
+  Do
+    KeyPress = Message.Question("Magnesium", "Open", "Close", "Exit")
+    If KeyPress = 1
+      PlcOutputs.Set("AirTubeValveMagnesium", 1)
+    Else If (KeyPress = 2)
+      PlcOutputs.Set("AirTubeValveMagnesium", 0)
+    Endif
+  Loop Until KeyPress = 3
+  PlcOutputs.Set("AirTubeValveMagnesium", 0)
+End
+
+Public Sub Menu_Adv_ControlKaolineValve_Click()
+  Dim KeyPress As Integer
+  Message.Title = "Valve"
+  Do
+    KeyPress = Message.Question("Kaoline", "Open", "Close", "Exit")
+    If KeyPress = 1
+      PlcOutputs.Set("AirTubeValveKaoline", 1)
+    Else If (KeyPress = 2)
+      PlcOutputs.Set("AirTubeValveKaoline", 0)
+    Endif
+  Loop Until KeyPress = 3
+  PlcOutputs.Set("AirTubeValveKaoline", 0)
+End
+
+Public Sub Menu_Adv_CleanMagnesium_Click()
+
+  Message.Title = "Attention"
+  Message.Info("Remove magnesium nozzle from container and place into empty beaker to capture 120cc")
+  CleanMachine.Magnesium(10)
 End
 
 

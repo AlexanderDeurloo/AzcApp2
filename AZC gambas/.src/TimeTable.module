@@ -18,6 +18,7 @@ Public Tube_Clean As Integer
 Public Bowl_Clean_Phase1_Time As Integer
 Public Bowl_Clean_Phase2_Time As Integer
 Public Bowl_Clean_Phase3_Time As Integer
+Public Bowl_Clean_Pause_Time As Integer
 Public Motor_ACC As Integer
 Public Motor_DEC As Integer
 

@@ -22,8 +22,36 @@ End
 
 
 Public Sub SetRpm(RpmSet As Integer) As Integer
-  SendRpm(RpmSet)
+  Dim ReturnCode As Integer
+  Dim Device As String
+  Dim Retry As Integer
+  Device = MainAZC.Var_Array[MainAZC.CommPortStirrer, MainAZC.Var_Ini]
+  
+  Stirrer_Open(Device)
+  Wait 0.1
+  ReturnCode = SendRpm(RpmSet)
   Print "Stirrer speed set to " & RpmSet & " rpm."
+  Print "Returncode stirrer lib = " & ReturnCode
+  If (ReturnCode < 0) 
+    For Retry = 0 To 5
+      Print "Stirrer SetRpm: error found !!!!"
+      Wait 2
+      Stirrer_Close()
+      Print "Try to fix..."
+      Wait 2
+      Stirrer_Open(Device)
+      Wait 1
+      ReturnCode = SendRpm(RpmSet)
+      Print "Stirrer speed set again to " & RpmSet & " rpm."
+      Print "Returncode stirrer lib during retry = " & ReturnCode
+      If (ReturnCode >= 0) 
+        Print "We fixed the stirrer comm. Retries = " & Retry
+        ' should be okay again
+        Break
+       Endif
+    Next
+  Endif
+  Stirrer_Close()
   Return 0
 End
 

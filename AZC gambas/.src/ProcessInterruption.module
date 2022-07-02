@@ -14,7 +14,7 @@ Public Sub Stop()
   PlcOutputs.Set("AirTubeValveKaoline", 0)
   PlcOutputs.Set("AirTubeValveMagnesium", 0)
   PlcOutputs.Set("AirTubeValveSample", 0)
-  PlcOutputs.Set("TubePumpPower", 0)
+  PlcOutputs.TubePump("off")
 
   FreqCtrl.SetFreq(0.0, "OFF")
   ' TODO: read freq controller via RS485 for actual status

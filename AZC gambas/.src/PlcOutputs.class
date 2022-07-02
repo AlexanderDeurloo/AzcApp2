@@ -8,6 +8,17 @@ Public Mod30Addr70Data As Integer = 0
 Public Mod30Addr71Data As Integer = 0
 Public Mod31Addr183Data As Integer = 0
 Public Mod31Addr184Data As Integer = 0
+Public RevPiAddr232Data As Integer = 0  ' internal of revpi. to control leds and relay.
+
+Public Sub Shutdown(State As String)
+  ' perhaps the internal relay of the revpi is turned on after powerup.
+  'piControlWrite(ModuleAddress, 1, VarPtr(DataA))
+  If State = "on"
+    Set("ShutdownIndicator", 1) ' relay open
+  Else
+    Set("ShutdownIndicator", 0) ' relay closed
+  Endif
+End
 
 
 Public Sub Set(Pin As String, State As Integer)
@@ -98,9 +109,12 @@ Public Sub Set(Pin As String, State As Integer)
   Else If Pin = "Spare4"
     ModuleAddress = 184
     PinAddr = 16
-  Else If Pin = "Spare5"
+  Else If Pin = "UsbHub"
     ModuleAddress = 184
     PinAddr = 32
+  Else If Pin = "ShutdownIndicator"
+    ModuleAddress = 232
+    PinAddr = 64
   Else
     Print "no valid input in PlcOutput.Set: " & Pin 
     Return
@@ -120,6 +134,9 @@ Public Sub Set(Pin As String, State As Integer)
     Else If ModuleAddress = 184
       Mod31Addr184Data = Mod31Addr184Data Or PinAddr
       DataA = Mod31Addr184Data
+    Else If ModuleAddress = 232
+      RevPiAddr232Data = RevPiAddr232Data Or PinAddr
+      DataA = RevPiAddr232Data
     Else
       Print "internal error in function PlcOutputs.Set"
       Return
@@ -137,6 +154,9 @@ Public Sub Set(Pin As String, State As Integer)
     Else If ModuleAddress = 184
       Mod31Addr184Data = Mod31Addr184Data And (Not PinAddr)
       DataA = Mod31Addr184Data
+    Else If ModuleAddress = 232
+      RevPiAddr232Data = RevPiAddr232Data And (Not PinAddr)
+      DataA = RevPiAddr232Data
     Else
       Print "internal error in function PlcOutputs.Set"
       Return
@@ -151,6 +171,13 @@ End
 
 
 Public Sub StirrerLift(NewPosition As String) As Integer
+  If MainAZC.StopProcess = 1 Then Goto finish
+  While PlcInputs.Read("InputCoverClosed") = "0"
+    If MainAZC.StopProcess = 1 Then Goto finish
+    Message.Title = "Attention"
+    Message.Warning("Please close Input Cover")
+    Wait 1
+  Wend
   If Comp(NewPosition, "up") == 0
     PlcOutputs.Set("AirStirrerLiftDown", 0)
     PlcOutputs.Set("AirStirrerLiftUp", 1)
@@ -161,6 +188,7 @@ Public Sub StirrerLift(NewPosition As String) As Integer
     Print "Invalid option in PlcOutput.StirrerLift :" & NewPosition
     Return 1
   Endif
+finish:
   Return 0
 End
 
@@ -224,4 +252,17 @@ Public Sub BowlDrain(NewPosition As String) As Integer
   Endif
   Return 0
 End
+
+Public Sub TubePump(State As String)
+  If State = "on"
+    Set("TubePumpPower", 1)
+    If PlcInputs.Read("TubePumpOpen") = 1
+      Message.Title = "Attention"
+      Message.Error("Tubepump isn't running. Not closed?")
+    Endif
+  Else
+    Set("TubePumpPower", 0)
+  Endif
+End
+
 

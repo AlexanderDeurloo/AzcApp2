@@ -62,7 +62,7 @@ Public Sub SendConfig()
 
   WriteAndCheck(dACC, 200)  ' 20.0 sec
   Wait 0.1
-  WriteAndCheck(dDEC, 250)  ' 25.0 sec
+  WriteAndCheck(dDEC, 700)  ' 80.0 sec
   Wait 0.1
   WriteAndCheck(dPOLENR, 2)
   Wait 0.1

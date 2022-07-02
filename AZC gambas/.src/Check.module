@@ -118,6 +118,13 @@ End
 Public Sub Input_Container_Fill() As String
   Dim Status As Integer
   Dim Reply As String
+  reply = "ERR"
+  While PlcInputs.Read("InputCoverClosed") = "0"
+    If MainAZC.StopProcess = 1 Then Goto finish
+    Message.Title = "Attention"
+    Message.Warning("Please close Input Cover")
+    Wait 1
+  Wend
   Status = PlcInputs.Read("InputContainerPresent")
   If (Status = 1)
     Reply = "present"
@@ -126,6 +133,7 @@ Public Sub Input_Container_Fill() As String
   Else
     Reply = "ERR"
   Endif
+finish:
   Return Reply
 End
 
@@ -271,6 +279,20 @@ Public Sub TubeValve_Kaoline() As String
     Reply = "off"
   Else If (Status = 1)
     Reply = "on"
+  Else
+    Reply = "ERR"
+  Endif
+  Return Reply
+End
+
+Public Sub Kaoline_Motor() As String
+  Dim Status As Integer
+  Dim Reply As String
+  Status = PlcInputs.Read("KaolineConnected")
+  If (Status = 1)
+    Reply = "true"
+  Else If (Status = 0)
+    Reply = "false"
   Else
     Reply = "ERR"
   Endif

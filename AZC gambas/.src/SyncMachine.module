@@ -3,7 +3,6 @@
 Public Sub Go() As String
   Dim Errors As Integer
   Print "Synchronization started.."
-  Errors = Light_Tower()
 
   If (MainAZC.StopProcess = 1) Then
     Errors = 2
@@ -31,7 +30,7 @@ Public Sub Controls_To_Default() As Integer
   FreqCtrl.SetFreq(0.0, "OFF")
   ' TODO: read freq controller via RS485 for actual status
   PlcOutputs.Set("HpPumpPower", 0)
-  PlcOutputs.Set("TubePumpPower", 0)
+  PlcOutputs.TubePump("off")
   PlcOutputs.Set("AirTubeValveMagnesium", 0)
   PlcOutputs.Set("WaterValveStirrerClean", 0)
   PlcOutputs.Set("WaterValveHpPump", 0)
@@ -39,7 +38,7 @@ Public Sub Controls_To_Default() As Integer
   
   PlcOutputs.Set("InputMotor", 0)
   PlcOutputs.Set("AirTubeValveKaoline", 0)
-  PlcOutputs.Set("TubePumpPower", 0)
+  PlcOutputs.TubePump("off")
   PlcOutputs.Set("AirTubeValveSample", 0)
 
   PlcOutputs.OutputStoreRotate("off")
@@ -47,18 +46,14 @@ Public Sub Controls_To_Default() As Integer
   
   'use serial control FOR Stirrer:
   Stirrer.SetRpm(0)    '
+  If Check.Stirrer_Rotate() <> "clean" 
+    MainAZC.Stirrer_Dirty = True
+    MainAZC.update_leds()
+  Endif
+
   StirProcess.MoveStir("clean")
   
   Return Errors
 End
 
 
-Public Sub Light_Tower() As Integer
-  SerialCpuComm.TxRxFast("green", 1)
-  Wait 0.1
-  SerialCpuComm.TxRxFast("blue", 1)
-  Wait 0.1
-  SerialCpuComm.TxRxFast("red", 1)
-  Wait 0.1
-  Return 0
-End

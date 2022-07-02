@@ -1,17 +1,18 @@
 # Gambas Project File 3.0
-# Compiled with Gambas 3.9.1
 Startup=MainAZC
 Icon=timer.png
-Version=0.0.43
+Version=0.0.52
 Component=gb.image
-Component=gb.qt4
+Component=gb.qt5
 Component=gb.form
 Component=gb.form.dialog
 Component=gb.settings
 Component=gb.image.effect
 Component=gb.net
+Component=gb.qt5.ext
 Environment="GB_GUI=gb.qt"
 TabSize=2
+Language=en_US
 Maintainer=fabien
 Vendor=Princeton
 Address=fabien@arcalis

@@ -4,14 +4,31 @@ Public Sub Next_Input() As Integer
   Dim TimeOutCnt As Integer = 50   '0.1 x 50 = 5 sec
   
   MainAZC.StatusText("Find next input container...")
+  
+  
   PlcOutputs.Set("InputMotor", 1)
   If (PlcInputs.Read("InputPosition") = 1)  ' if sitting on switch nicely:
     Do
       Wait 0.1
       If MainAZC.StopProcess = 1 Then Goto finish
+      If PlcInputs.Read("InputCoverClosed") = "0"
+        PlcOutputs.Set("InputMotor", 0)
+        Message.Title = "Attention"
+        Message.Warning("Please close Input Cover")
+        TimeOutCnt = 50
+        Wait 2
+        If PlcInputs.Read("InputCoverClosed") = "1"
+          PlcOutputs.Set("InputMotor", 1)
+        Endif
+      Endif
       If TimeOutCnt
         TimeOutCnt = TimeOutCnt - 1
       Else
+        If (PlcInputs.Read("InputMotorPowered") = 0)  ' if inputmotor is not powered, the cover is probably open
+          PlcOutputs.Set("InputMotor", 0)
+        Message.Title = "Attention"
+          Message.Error("Timeout. Input motor doesn't run. Cover closed properly?")
+        Endif
         Print "Timeout in Next_Input, waiting for switch to go OFF"
         PlcOutputs.Set("InputMotor", 0)
         Return 1
@@ -23,9 +40,24 @@ Public Sub Next_Input() As Integer
   Do
     Wait 0.1
     If MainAZC.StopProcess = 1 Then Goto finish
+    If PlcInputs.Read("InputCoverClosed") = "0"
+      PlcOutputs.Set("InputMotor", 0)
+      Message.Title = "Attention"
+      Message.Warning("Please close Input Cover")
+      TimeOutCnt = 50
+      Wait 2
+      If PlcInputs.Read("InputCoverClosed") = "1"
+        PlcOutputs.Set("InputMotor", 1)
+      Endif
+    Endif
     If TimeOutCnt
       TimeOutCnt = TimeOutCnt - 1
     Else
+      If (PlcInputs.Read("InputMotorPowered") = 0)  ' if inputmotor is not powered, the cover is probably open
+        PlcOutputs.Set("InputMotor", 0)
+        Message.Title = "Attention"
+        Message.Error("Timeout. Input motor doesn't run. Cover closed?")
+      Endif
       Print "Timeout in Next_Input, waiting for switch to go ON"
       PlcOutputs.Set("InputMotor", 0)
       Return 2
@@ -64,15 +96,16 @@ Public Sub Input_Container() As String
   Dim i As Integer
   
   MainAZC.StatusText("Check for input container...")
-  
+  Print "Input_Container: find one..."
   For i = 1 To Val(MainAZC.Var_Array[MainAZC.Max_Input_Containers, MainAZC.Var_Ini]) Step 1
-    If Check.Input_Container_Fill() = "present" Then
+    If ((Check.Input_Container_Fill() = "present") And (PlcInputs.Read("InputPosition") = 1)) Then
       Errorcode = "Found on position " & i
       Break ' no need to look any further. Go to exit
     Endif
     Print "Nothing found. Go to next position: " & CStr(i + 1)
     If Next_Input() <> 0
       ErrorCode = "TimeOut"
+      Print "Input_Container: timeout" 
       Break
     Endif
 '    SerialHandler.TxRx(on.input_store_rotate)
@@ -81,7 +114,7 @@ Public Sub Input_Container() As String
     'Do
     '  Wait 0.1
     '  Print "check position (?)"
-    '  If MainAZC.StopProcess = 1 Then Goto finish
+    If MainAZC.StopProcess = 1 Then Goto finish
     'Loop Until Check.Input_Store_Position() = "on"
     'Wait 0.5
     'Print "motor off "

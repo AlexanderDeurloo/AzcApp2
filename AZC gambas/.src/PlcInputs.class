@@ -71,19 +71,19 @@ Public Sub Read(Pin As String) As Integer
   Else If Pin = "KaolineLevel"
     ModuleAddress = 113
     PinAddr = 32
-  Else If Pin = "Spare2"
+  Else If Pin = "KaolineConnected"
     ModuleAddress = 113
     PinAddr = 64
-  Else If Pin = "Spare3"
+  Else If Pin = "InputMotorPowered"
     ModuleAddress = 113
     PinAddr = 128
-  Else If Pin = "Spare4"
+  Else If Pin = "StirrerCoverClosed"
     ModuleAddress = 114     ' 184 = mod31, last 6 pins
     PinAddr = 1
-  Else If Pin = "Spare5"
+  Else If Pin = "TubePumpOpen"
     ModuleAddress = 114
     PinAddr = 2
-  Else If Pin = "Spare6"
+  Else If Pin = "InputCoverClosed"
     ModuleAddress = 114
     PinAddr = 4
   Else If Pin = "Spare7"

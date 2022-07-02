@@ -4,48 +4,60 @@
 
 Public Sub MoveStir(position As String)
   If position = "clean" Then
+    If MainAZC.StopProcess = 1 Then Goto finish
     If Check.Stirrer_Rotate() = "stir" Then
       If Check.Stirrer_Lift() = "down" Then
         PlcOutputs.StirrerLift("up")
         Do
           Wait 0.1
+          If MainAZC.StopProcess = 1 Then Goto finish
         Loop Until Check.Stirrer_Lift() = "up"
       Endif
       Wait 1
       PlcOutputs.StirrerRotate("clean")
       Do
         Wait 0.1
+        If MainAZC.StopProcess = 1 Then Goto finish
       Loop Until Check.Stirrer_Rotate() = "clean"
     Endif
+    If MainAZC.StopProcess = 1 Then Goto finish
     If Check.Stirrer_Lift() = "up" Then
       PlcOutputs.StirrerLift("down")
       Do
         Wait 0.1
+        If MainAZC.StopProcess = 1 Then Goto finish
       Loop Until Check.Stirrer_Lift() = "down"
     Endif
   Else If position = "stir" Then
     If Check.Stirrer_Rotate() = "clean" Then
+      If MainAZC.StopProcess = 1 Then Goto finish
       If Check.Stirrer_Lift() = "down" Then
         PlcOutputs.StirrerLift("up")
         Do
           FillProcess.CheckFill()
+          If MainAZC.StopProcess = 1 Then Goto finish
           Wait 0.2
         Loop Until Check.Stirrer_Lift() = "up"
       Endif
+      If MainAZC.StopProcess = 1 Then Goto finish
       PlcOutputs.StirrerRotate("stir")
       Do
         FillProcess.CheckFill()
         Wait 0.2
+        If MainAZC.StopProcess = 1 Then Goto finish
       Loop Until Check.Stirrer_Rotate() = "stir"
     Endif
+    If MainAZC.StopProcess = 1 Then Goto finish
     If (Check.Stirrer_Lift() = "up") Then
       PlcOutputs.StirrerLift("down")
       Do
         FillProcess.CheckFill()
         Wait 0.2
+        If MainAZC.StopProcess = 1 Then Goto finish
       Loop Until Check.Stirrer_Lift() = "down"
     Endif
   Endif
+finish:
   Return
 End
 

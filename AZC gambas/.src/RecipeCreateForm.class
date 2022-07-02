@@ -22,6 +22,7 @@ Public Sub CreateFormLoad_Click()
   Refresh_Create()                                      ' load spinboxes with new values.
   RecipeCreateForm.text = Dialog.Path                   ' modify the header of the screen, so the user can see which file is used.
   Catch
+    Message.Title = "Attention"
     Message.Info(Error.Text)
 End
 
@@ -50,6 +51,7 @@ Public Sub CreateFormSave_Click()
   RecipeCreateForm.text = Dialog.Path                   ' modify the header of the screen, so the user can see which file is used.
 
 Catch
+  Message.Title = "Attention"
   Message.Info(Error.Text)
 End
 

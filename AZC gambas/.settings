@@ -2,7 +2,8 @@
 ProcessCTRL=[361]
 
 [Breakpoints]
-Count=0
+Count=1
+Breakpoint[1]="FillProcess.172"
 
 [DebugWindow]
 Count=0
@@ -11,17 +12,26 @@ Count=0
 ShowHidden=True
 Geometry=[496,333,288,360]
 
+[DebugWindow/SP_BowlCleanPauseTime]
+Geometry=[11,53,288,360]
+
 [DebugWindow/SerialCpuComm]
 Geometry=[-2,54,288,360]
 
 [DebugWindow/Sport]
 Geometry=[57,0,301,329]
 
+[DebugWindow/Var_Array]
+Geometry=[11,53,288,651]
+
 [DebugWindow/draw]
 Geometry=[0,46,288,360]
 
 [DebugWindow/sport]
 Geometry=[124,134,301,440]
+
+[Executable]
+Path="/home/pi/AzcApp/AZC_Application.gambas"
 
 [FFind]
 SearchIn="Module"
@@ -31,14 +41,10 @@ SearchComment=False
 SearchString=True
 
 [OpenFile]
-Count=6
-Active=6
-File[1]=".src/MainAZC.class:47.184"
-File[2]=".src/SerialCpuComm.class:11.2"
-File[3]=".src/FreqCtrl.module:39.11"
-File[4]=".src/PlcOutputs.class:10.2"
-File[5]=".src/PlcInputs.class:30.2"
-File[6]=".src/Stirrer.class:2.25"
+Count=2
+Active=1
+File[1]=".src/MainAZC.class:0.154"
+File[2]=".src/MainAZC.form"
 
 [Watches]
 Count=1

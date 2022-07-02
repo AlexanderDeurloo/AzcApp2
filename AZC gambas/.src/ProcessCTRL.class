@@ -36,7 +36,7 @@ Public Sub Go()
   If MainAZC.Stirrer_Dirty = True Then
     Print "hela, Stirrer is dirty"
     MainAZC.StatusText("Cleaning Stirrer before use...")
-    SerialCpuComm.TxRxFast("red", 1)
+    'SerialCpuComm.TxRxFast("red", 1)
     CleanMachine.Stir_Clean_Setup = False
     CleanMachine.Stir(TimeTable.Stirrer_Clean_Time)
     MainAZC.update_leds()
@@ -48,14 +48,14 @@ Public Sub Go()
   If MainAZC.Bowl_Dirty = True Then
     Print "hela, bowl is dirty"
     MainAZC.StatusText("Cleaning Bowl before use...")
-    SerialCpuComm.TxRxFast("red", 1)
+    'SerialCpuComm.TxRxFast("red", 1)
     Bowl_Stopped = True
     CleanMachine.All(False)
   Endif
   
   MainAZC.update_leds()
   Startup_clean = False   ' to avoid recleaning every hit of "play"
-  SerialCpuComm.TxRxFast("red", 1)
+  SerialCpuComm.TxRxFast("green", 1)
 
   If MainAZC.StopProcess = 1 Then Goto finish
   Bowl_Delay = TimeTable.Stir_Time - TimeTable.Motor_ACC
@@ -70,6 +70,7 @@ Public Sub Go()
     MainAZC.CTRL_Progress_Timer(True) ' start progress bar)
     MainAZC.StatusText("Running...")
     If Fill_Input() Then
+      Message.Title = "Attention"
       Message.Error("Water fill timeout. Check main water pressure.", "Stop")
       Wait 1
      Goto finish
@@ -103,6 +104,7 @@ Public Sub Go()
     If MainAZC.StopProcess = 1 Then Goto finish
     Stop_Bowl()
     If MainAZC.StopProcess = 1 Then Goto finish
+    Print "Bowl stopped. Wait for capture..."
     Wait_For_Capture()      ' also checks for stir clean stop
     If MainAZC.StopProcess = 1 Then Goto finish
     Move_Output("rest")
@@ -111,7 +113,9 @@ Public Sub Go()
     If MainAZC.StopProcess = 1 Then Goto finish
     Inc Process_Count
     MainAZC.Increment_Counter(Process_Count)
-    MainAZC.Time_Correction = DateDiff(MainAZC.starttime, Now(), gb.Second)
+    Print "Debug: starttime = " & MainAZC.starttime
+    MainAZC.Time_Correction = Timer() - MainAZC.starttime
+    Print "Debug: correction = " & MainAZC.Time_Correction 
     MainAZC.StatusText("Cleaning...")
     CleanMachine.All(False)
     If MainAZC.StopProcess = 1 Then Goto finish
@@ -133,6 +137,12 @@ Public Sub Fill_Input() As Integer ' TODO: to be expanded with timeout capture a
   
   SerialCpuComm.TxRxFast("waterfillstop", 1)
   Print "before fill: " & Check.Fill_Status()
+  If PlcInputs.Read("InputCoverClosed") = "0"
+    Message.Title = "Attention"
+    Message.Warning("Please close Input Cover")
+    Wait 2
+  Endif
+
   SerialCpuComm.TxRxFast("waterfillstart", 1)
   Print "fill started: " & Check.Fill_Status()
   Wait 0.5
@@ -141,6 +151,17 @@ Public Sub Fill_Input() As Integer ' TODO: to be expanded with timeout capture a
     Wait 1
     If MainAZC.StopProcess = 1 Then Goto finish
     Print "during fill: " & Check.Fill_Status()
+    
+    If PlcInputs.Read("InputCoverClosed") = "0"
+      SerialCpuComm.TxRxFast("waterfillstop", 1)
+      Message.Title = "Attention"
+      Message.Warning("Please close Input Cover")
+      Wait 2
+      If PlcInputs.Read("InputCoverClosed") = "1"
+        SerialCpuComm.TxRxFast("waterfillstart", 1)
+      Endif
+    Endif
+  
     If (Check.Fill_Status() = "timeout") Then
       Print "water fill timeout."
       Goto finish
@@ -184,7 +205,7 @@ Public Sub Start_Bowl()
   
  
   TimerBowlSpeedup.Delay = TimeTable.Motor_ACC ' 10000
-  FreqCtrl.SetFreq(60.0, "ON")
+  FreqCtrl.SetFreq(78.75, "ON")
   ' TODO: link setting to time in file and visa versa perhaps
   Bowl_Running = True
   Bowl_On_Speed = False
@@ -220,21 +241,21 @@ Public Sub Fill_Bowl()
   Magn_Done = False
   PlcOutputs.Set("AirTubeValveMagnesium", 1)
   Wait 0.5  'china
-  PlcOutputs.Set("TubePumpPower", 1)
+  PlcOutputs.TubePump("on")
   TimerMagn.Delay = TimeTable.Magnesium_Fill_Time ' 3000  ' debug
   TimerMagn.Enabled = True
   Do
     Wait 0.1
     If MainAZC.StopProcess = 1 Then Goto finish
   Loop Until Magn_Done = True
-  PlcOutputs.Set("TubePumpPower", 0)
+  PlcOutputs.TubePump("off")
   Wait 0.5  'china
   PlcOutputs.Set("AirTubeValveMagnesium", 0)
   Wait 0.5
   ' fill water (pump required)
   Water_Done = False
   PlcOutputs.Set("WaterValveTubes", 1)
-  PlcOutputs.Set("TubePumpPower", 1)
+  PlcOutputs.TubePump("on")
   TimerWater.delay = TimeTable.Bowl_Water_Fill_Time '5000  ' debug
   TimerWater.Enabled = True
   Do
@@ -242,12 +263,12 @@ Public Sub Fill_Bowl()
     If MainAZC.StopProcess = 1 Then Goto finish
   Loop Until Water_Done = True
   PlcOutputs.Set("WaterValveTubes", 0)
-  PlcOutputs.Set("TubePumpPower", 0)
+  PlcOutputs.TubePump("off")
   Wait 1
   ' fill sample
   Sample_Done = False
   PlcOutputs.Set("AirTubeValveSample", 1)
-  PlcOutputs.Set("TubePumpPower", 1)
+  PlcOutputs.TubePump("on")
   TimerSample.Delay = TimeTable.Sample_Time '10000 ' debug
   TimerSample.Enabled = True
   Do
@@ -255,12 +276,12 @@ Public Sub Fill_Bowl()
     If MainAZC.StopProcess = 1 Then Goto finish
   Loop Until Sample_Done = True
   PlcOutputs.Set("AirTubeValveSample", 0)
-  PlcOutputs.Set("TubePumpPower", 0)
+  PlcOutputs.TubePump("off")
   Wait 1
   ' fill kaoline
   Kaoline_Done = False
   PlcOutputs.Set("AirTubeValveKaoline", 1)
-  PlcOutputs.Set("TubePumpPower", 1)
+  PlcOutputs.TubePump("on")
   TimerKaoline.Delay = TimeTable.Kaoline_Fill_Time '10000 ' debug
   Timerkaoline.Enabled = True
   Do
@@ -275,7 +296,7 @@ finish:
   PlcOutputs.Set("AirTubeValveMagnesium", 0)
   PlcOutputs.Set("WaterValveTubes", 0)
   PlcOutputs.Set("AirTubeValveKaoline", 0)
-  PlcOutputs.Set("TubePumpPower", 0)
+  PlcOutputs.TubePump("off")
   PlcOutputs.Set("AirTubeValveSample", 0)
   Wait 1
 End
@@ -303,35 +324,48 @@ Public Sub Wait_For_Centrifuge()
 finish:
 End
 
+
+
 Public Sub Move_Output(position As String)
   If position = "capture" Then
     MainAZC.StatusText("Move output store to capture position...")
-    'move drain away:
+    Print "Move drain away from bowl. Current position = " & Check.Drain_Bowl_Position() 
     PlcOutputs.BowlDrain("awayfrombowl")
-    Do
-      Wait 0.1
-    Loop Until Check.Drain_Bowl_Position() = "on"
-
+    Print "Move store to capture. Current position = " & Check.Output_Store_Move() 
     PlcOutputs.OutputStoreMove("capture")
-    Do
-      Wait 0.1
-    Loop Until Check.Output_Store_Move() = "on"
-  Else If position = "rest" Then
-    MainAZC.StatusText("Move output store away...")
-    PlcOutputs.OutputStoreMove("rest")
-    Do
-      Wait 0.1
-    Loop Until Check.Output_Store_Move() = "off"
 
-    'move drain back under bowl:
-    PlcOutputs.BowlDrain("underbowl")
+    Print "Wait for drain to be removed..."
     Do
       Wait 0.1
     Loop Until Check.Drain_Bowl_Position() = "off"
+    Print "Drain removed. Wait for store to arrive at capture..."
+    Do
+      Wait 0.1
+    Loop Until Check.Output_Store_Move() = "off"
+    Print "Output store arrived at capture."
+  Else If position = "rest" Then
+    MainAZC.StatusText("Move output store away...")
+    Print "Move to rest. Current position = " & Check.Output_Store_Move() 
+    PlcOutputs.OutputStoreMove("rest")
+    'move drain back under bowl:
+    Print "Move drain under bowl. Current position = " & Check.Drain_Bowl_Position() 
+    PlcOutputs.BowlDrain("underbowl")
+    Print "Wait for drain to arrive under bowl..."
+    Do
+      Wait 0.1
+    Loop Until Check.Drain_Bowl_Position() = "on"
+    Print "Drain arrived under bowl. Wait for store to arrive at rest..."
+    Do
+      Wait 0.1
+    Loop Until Check.Output_Store_Move() = "on"
+    Print "Output store arrived at rest."
+
 
   Endif
   Wait 1  ' psyco wait.
 End
+
+
 
 Public Sub Stop_Bowl()
   MainAZC.StatusText("Stop bowl...")
@@ -339,17 +373,24 @@ Public Sub Stop_Bowl()
   ' TODO: read freq controller via RS485 for actual status
   Bowl_Stopped = False
   TimerBowlSlowDown.delay = TimeTable.Motor_DEC ' 20000 ' debug. time is equal to "DEC" parameter in freq inverters.
+  Print "Set timer to wait for motor DEC to " & TimeTable.Motor_DEC
   TimerBowlSlowDown.Enabled = True
 End
 
 Public Sub Wait_For_Capture()
+  Print "We arrived at wait_for_capture"
   Capture_Done = False
-  TimerCapture.Delay = TimeTable.Output_Capture_Time ' 10000
+  TimerCapture.Delay = TimeTable.Output_Capture_Time
+  Print "Time for capturing is set is " & TimeTable.Output_Capture_Time
   TimerCapture.Enabled = True
   MainAZC.StatusText("capturing result...")
+  CleanMachine.StirSpinInit()
   Do
-    Wait 0.1
+    Wait 1
+    'MainAZC.StatusText("capturing result..." & TimerCapture.Delay)
     CleanMachine.stir_stop_check()
+    CleanMachine.StirSpinDry()
+    
   Loop Until Capture_Done = True
   MainAZC.StatusText("capturing result done.")
 End

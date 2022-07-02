@@ -1,31 +1,32 @@
 # Gambas Form File 3.0
-{ Form Form 
+
+{ Form Form
   MoveScaled(0,0,64,64)
-  { TimerKaolineClean #Timer 
-    #MoveScaled(0,0)
+  { TimerKaolineClean #Timer
+    #MoveScaled(30,20)
   }
-  { Label1 Label 
+  { Label1 Label
     MoveScaled(3,21,24,4)
     Text = ("kaoline clean tube time:")
   }
-  { Label2 Label 
+  { Label2 Label
     MoveScaled(3,14,24,4)
     Text = ("stirrer clean time:")
   }
-  { TimerStirClean #Timer 
-    #MoveScaled(1,1)
+  { TimerStirClean #Timer
+    #MoveScaled(30,13)
   }
-  { Label3 Label 
+  { Label3 Label
     MoveScaled(3,7,24,4)
     Text = ("Bowl clean time:")
   }
-  { TimerBowlClean #Timer 
-    #MoveScaled(2,2)
+  { TimerBowlClean #Timer
+    #MoveScaled(30,6)
   }
-  { TimerCleanTube #Timer 
-    #MoveScaled(3,3)
+  { TimerCleanTube #Timer
+    #MoveScaled(30,27)
   }
-  { Label4 Label 
+  { Label4 Label
     MoveScaled(3,28,24,4)
     Text = ("Clean tube time:")
   }

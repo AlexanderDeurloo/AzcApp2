@@ -1,0 +1,19 @@
+~/Settings/AZC.ini
+/home/pi/Settings/mix1.rcp
+let's connect to Cpu
+Serial name for cpu comm is /dev/CPU_PORT
+Wait until light show is done. 2.
+Cpu replied properly: CpuPresent
+Send config to freq controller
+Config to freq controller done
+Stop bowl motor
+ first tx done
+clean flag = 
+false
+WaterFillTimeout=25000
+Speed to low. Adjusted to 0.5Hz
+Stop bowl motor
+Stirrer speed set to 0 rpm.
+Returncode stirrer lib = 8
+Stirrer communication closed.
+Close Form

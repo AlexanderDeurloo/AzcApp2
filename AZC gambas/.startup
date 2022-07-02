@@ -2,13 +2,14 @@ MainAZC
 
 0
 0
-0.0.43
+0.0.52
 
 gb.image
-gb.qt4
+gb.qt5
 gb.form
 gb.form.dialog
 gb.settings
 gb.image.effect
 gb.net
+gb.qt5.ext
 

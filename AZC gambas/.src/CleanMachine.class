@@ -7,6 +7,25 @@ Public Tube_Clean_Pending As Boolean = False
 Public Stir_Clean_Pending As Boolean = False
 Public Stir_Clean_Setup As Boolean = False
 
+Public StirrerDry As Boolean = False
+Public StirSpinDryDone As Boolean = False
+Public StirSpinning As Boolean = - False
+Public StirSpinTimerPending As Boolean = False
+
+
+Public Sub Magnesium(Duration As Integer)
+  If Duration < 2 Then Duration = 2
+  
+  PlcOutputs.Set("AirTubeValveMagnesium", 1)
+  Wait 0.2
+  PlcOutputs.Set("WaterValveTubes", 1)
+     Wait Duration
+  PlcOutputs.Set("WaterValveTubes", 0)
+  Wait 0.2
+  PlcOutputs.Set("AirTubeValveMagnesium", 0)
+End
+
+
 Public Sub All(skipbowl As Boolean)
   If (Stir_Clean_Setup = True) Then ' stir cleaning is not stopped yet
   Print " stir is bezig"
@@ -15,11 +34,43 @@ Public Sub All(skipbowl As Boolean)
     If MainAZC.StopProcess = 1 Then Goto finish
   Loop Until Stir_Stop_Check() = "done"   ' check until Stirrer clean is done.
   Endif
-  Print "nu de bowl dan"
-  Wait 0.5
-  If skipbowl = False Then Bowl_Setup()
+  If skipbowl = False
+    Print "nu de bowl dan"
+    Bowl_Setup()
+  Endif
 finish:
 End
+
+
+Public Sub StirSpinInit()
+  StirSpinning = False
+  StirSpinTimerPending = False
+  StirSpinDryDone = False
+End
+
+
+Public Sub StirSpinDry()
+  If StirrerDry = True Then Return
+  If StirSpinDryDone = True Then Return
+
+  If StirSpinning = True
+    If StirSpinTimerPending = True Then Return
+    Stirrer.SetRpm(0)
+    StirSpinDryDone = True
+    StirrerDry = True
+    Return
+  Endif
+  StirSpinDryDone = False
+  StirSpinning = True
+  StirProcess.MoveStir("clean")
+  Stirrer.SetRpm(2100)
+  TimerStirClean.Enabled = False
+  TimerStirClean.Delay = 15000 'ms
+  StirSpinTimerPending = True
+  TimerStirClean.Enabled = True
+End
+
+
 
 
 Public Sub Stir(cleanTime As Integer) ' cleantime in seconds
@@ -40,6 +91,7 @@ Public Sub Stir(cleanTime As Integer) ' cleantime in seconds
     Stir_Clean_Pending = False
     MainAZC.Stirrer_Dirty = False
     MainAZC.update_leds()
+    StirrerDry = False
     Return
   Endif
   Return
@@ -72,11 +124,12 @@ Public Sub Stirrer_Setup(cleanTime As Integer)
   Endif
   Stirrer.SetRpm(Val(MainAZC.Var_Array[MainAZC.Stirrer_Low_Speed, MainAZC.Var_Ini]))    '
   ' Stirrer is in clean position now.
-  Wait 0.1
+  Wait 0.5
     PlcOutputs.Set("WaterValveStirrerClean", 1)
-  Wait 0.1
+  Wait 0.5
+
     PlcOutputs.Set("AirTubeValveSample", 1)
-  Wait 0.1
+  Wait 0.5
     PlcOutputs.Set("WaterValveTubes", 1)
   TimerStirClean.Enabled = False
   TimerStirClean.Delay = cleanTime 'ms
@@ -88,25 +141,26 @@ End
 Public Sub TimerStirClean_Timer()
   TimerStirClean.Enabled = False
   Stir_Clean_Pending = False
+  StirSpinTimerPending = False
   Print "stir clean TIMER END"
 End
 
 
 Public Sub Stirrer_Stop()
     PlcOutputs.Set("WaterValveTubes", 0)
-  Wait 0.1
+  Wait 0.5
     PlcOutputs.Set("AirTubeValveSample", 0)
-  Wait 0.1
+  Wait 0.5
     PlcOutputs.Set("WaterValveStirrerClean", 0)
-  Wait 0.1
+  Wait 0.5
   Stirrer.SetRpm(0)  'use serial control for stirrer
   Wait 0.1
 End
 
 Public Sub Stir_Stop_Check() As String
-  If (Stir_Clean_Pending = False) And (Stir_Clean_Setup = True) Then    ' to check is time expired + to avoid restart cleaning
+  If (Stir_Clean_Pending = False) And (Stir_Clean_Setup = True) Then    ' to check if time expired + to avoid restart cleaning
     Stir(0)  ' STOPS STIR CLEANING
-    Print "clean is fini"
+    Print "stir clean is fini"
     Return "done"
   Endif
   Return "busy"
@@ -133,7 +187,6 @@ Public Sub Bowl_Setup()
     If MainAZC.StopProcess = 1 Then Goto finish
   Loop Until (Stir_Clean_Pending = False)
   Print "stir is ready, bowl can continue"
-  Print "freq1 off"
   FreqCtrl.SetFreq(0.0, "OFF")
   ' TODO: read freq controller via RS485 for actual status
   Print "wait until bowl stopped(simple timer)"
@@ -142,20 +195,20 @@ Public Sub Bowl_Setup()
     Print ","
   Loop Until ProcessCTRL.Bowl_Stopped = True  ' wait for bowl to stop. This way we make sure that the tiny motor can be attached.
   
-  Print "make output store position is off"
-  If Check.Output_Store_Move() = "on" Then
+  Print "make output store position is in rest"
+  If Check.Output_Store_Move() = "off" Then
     PlcOutputs.OutputStoreMove("rest")
     Do
      Wait 0.1
-    Loop Until Check.Output_Store_Move() = "off"
+    Loop Until Check.Output_Store_Move() = "on"
   Endif
 
   Print "move drain under bowl" 
-  If Check.Drain_Bowl_Position() = "on" Then
+  If Check.Drain_Bowl_Position() = "off" Then
     PlcOutputs.BowlDrain("underbowl")
     Do
      Wait 0.1
-    Loop Until Check.Drain_Bowl_Position() = "off"
+    Loop Until Check.Drain_Bowl_Position() = "on"
   Endif
 
   ' wait for stir clean.
@@ -183,7 +236,7 @@ Public Sub Bowl_Setup()
   Print " do the bowl clean procedure"
   Tube_Clean_Pending = True
   PlcOutputs.Set("WaterValveTubes", 1)
-  PlcOutputs.Set("TubePumpPower", 1)
+  PlcOutputs.TubePump("on")
   TimerCleanTube.Delay = TimeTable.Tube_Clean
   TimerCleanTube.Enabled = True
   Do
@@ -191,11 +244,15 @@ Public Sub Bowl_Setup()
     If MainAZC.StopProcess = 1 Then Goto finish
   Loop Until Tube_Clean_Pending = False
   PlcOutputs.Set("WaterValveTubes", 0)
-  PlcOutputs.Set("TubePumpPower", 0)
+  PlcOutputs.TubePump("off")
 
+  FreqCtrl.SetFreq(0.5, "ON")
   Wait 0.5
   PlcOutputs.Set("WaterValveHpPump", 1)
   Wait 1
+
+
+  
   PlcOutputs.Set("HpPumpPower", 1)
   TimerBowlClean.Delay = TimeTable.Bowl_Clean_Phase1_Time 'ms
   TimerBowlClean.Enabled = True
@@ -205,6 +262,19 @@ Public Sub Bowl_Setup()
     If MainAZC.StopProcess = 1 Then Goto finish
   Loop Until Bowl_Clean_Pending = False
   PlcOutputs.Set("HpPumpPower", 0)
+
+
+  Bowl_Clean_Pending = True
+  TimerBowlClean.Delay = TimeTable.Bowl_Clean_Pause_Time 'ms
+  TimerBowlClean.Enabled = True
+  Print "timer bowl pause started..." & CStr(TimeTable.Bowl_Clean_Pause_Time) & "msec"
+  Do
+    Wait 0.1
+    If MainAZC.StopProcess = 1 Then Goto finish
+  Loop Until Bowl_Clean_Pending = False
+
+  
+  PlcOutputs.Set("HpPumpPower", 1)
   Bowl_Clean_Pending = True
   TimerBowlClean.Delay = TimeTable.Bowl_Clean_Phase2_Time 'ms
   TimerBowlClean.Enabled = True
@@ -213,8 +283,20 @@ Public Sub Bowl_Setup()
     Wait 0.1
     If MainAZC.StopProcess = 1 Then Goto finish
   Loop Until Bowl_Clean_Pending = False
+  PlcOutputs.Set("HpPumpPower", 0)
   
-  PlcOutputs.Set("WaterValveHpPump", 1)
+
+  Bowl_Clean_Pending = True
+  TimerBowlClean.Delay = TimeTable.Bowl_Clean_Pause_Time 'ms
+  TimerBowlClean.Enabled = True
+  Print "timer bowl pause started..." & CStr(TimeTable.Bowl_Clean_Pause_Time) & "msec"
+  Do
+    Wait 0.1
+    If MainAZC.StopProcess = 1 Then Goto finish
+  Loop Until Bowl_Clean_Pending = False
+
+
+  'PlcOutputs.Set("WaterValveHpPump", 1)
   PlcOutputs.Set("HpPumpPower", 1)
   Bowl_Clean_Pending = True
   TimerBowlClean.Delay = TimeTable.Bowl_Clean_Phase3_Time 'ms
@@ -224,14 +306,23 @@ Public Sub Bowl_Setup()
     Wait 0.1
     If MainAZC.StopProcess = 1 Then Goto finish
   Loop Until Bowl_Clean_Pending = False
-   
+  PlcOutputs.Set("HpPumpPower", 0)
+
+
+  'Wait 2
+  'FreqCtrl.SetFreq(75, "ON")
+  'Wait TimeTable.Motor_ACC / 1000  ' TODO: make more intelligent with timer and abort option.
   Bowl_Stop()
+  'Wait TimeTable.Motor_DEC / 1000  ' TODO: make more intelligent with timer and abort option.
+
+
   MainAZC.Bowl_Dirty = False
   MainAZC.update_leds()
 finish:
+  Print "Bowl clean finished"
   PlcOutputs.Set("AirTubeValveKaoline", 0)
   PlcOutputs.Set("WaterValveTubes", 0)
-  PlcOutputs.Set("TubePumpPower", 0)
+  PlcOutputs.TubePump("off")
   PlcOutputs.Set("HpPumpPower", 0)
   Return
 End
