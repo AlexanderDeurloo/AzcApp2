@@ -2,7 +2,11 @@
 
 Library "~/AzcSystem/Libraries/IFM/IFM_lib"
 Extern IFM_Read_Sensor(SensorNr As Integer, SensorCnt As Integer, IpAddr As String, Type As Integer, Result As Pointer) As Integer
-'Public ResultSensor As Integer
+
+Public ResultSensorClay As Integer
+Public ResultSensorSeparator As Integer
+Public ResultSensorOutput As Integer
+Public NotEmptyCriteria As Integer
 
 Public ResultOld As New Integer[4]
 Public InitSensors_Path As String = "~/Settings/AZC_Sensors.ini"
@@ -24,6 +28,7 @@ Public Sensor2_Lo As Integer = 4
 Public Sensor2_Hi As Integer = 5
 Public Sensor3_Lo As Integer = 6
 Public Sensor3_Hi As Integer = 7
+Public OutputNotEmptyOffset As Integer = 8
 
 
 Public Sub Read_SensorFile(FileName As String, StoreColomn As Integer)
@@ -39,20 +44,20 @@ Public Sub Read_SensorFile(FileName As String, StoreColomn As Integer)
     SensorFileString = Right(SensorFileString, - pos)
     Sensor_Array[dmp2, 0] = dmp1
   Next
-
+  NotEmptyCriteria = Val(Sensor_Array[Sensor2_Lo, Sensor_Ini]) - Val(Sensor_Array[OutputNotEmptyOffset, Sensor_Ini])
 End
 
 
 Public Sub Init() As Integer
   
-'  Dim index As Integer
   ' Read file with config for sensors
   Print "IFM sensor init..."
     Read_SensorFile(InitSensors_Path, Sensor_Ini)    
 
-  'For index = 1 To 10 Step 1
-  '  Print Sensor_Array[index, Sensor_Ini]
-  '  Next
+  ResultSensorClay = 0
+  ResultSensorSeparator = 0
+  ResultSensorOutput = 0
+  
   SensorIpAddr = Sensor_Array[IpAddress, Sensor_Ini]
   SensorCount = Sensor_Array[NoOfSensors, Sensor_Ini]
   Print "Sensor IP Address = " & SensorIpAddr
@@ -93,9 +98,13 @@ Public Sub Read(Sensor As String) As Integer
   Endif
 
   ReturnCode = IFM_Read_Sensor(SensorAddr, SensorCount, SensorIpAddr, SensorType, VarPtr(ResultSensor))
-  'TestLevelSensors.ResultSensorKaoline = ResultSensor
-  'TestLevelSensors.ResultSensorSeparator = ResultSensor
-  'TestLevelSensors.ResultSensorOutput = ResultSensor
+  If Sensor = "KaolineLevel" Then 
+    ResultSensorClay = ResultSensor
+  Else If Sensor = "OutputLevel" Then 
+    ResultSensorOutput = ResultSensor
+  Else If Sensor = "SeparatorLevel" Then 
+    ResultSensorSeparator = ResultSensor
+  Endif
 
   If SensorType = 1 Then
     If (ResultOld[SensorAddr] = 0) And (ResultSensor > LevelHi)

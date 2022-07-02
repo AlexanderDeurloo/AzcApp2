@@ -109,6 +109,11 @@ Public Sub Go()
     If MainAZC.StopProcess = 1 Then Goto finish
     Move_Output("rest")
     If MainAZC.StopProcess = 1 Then Goto finish
+    ' measure output level.
+    Wait 3 ' allow result to stabilize
+    IfmSensors.Read("OutputLevel")
+    Print "Output level is " & IfmSensors.ResultSensorOutput
+    
     Rotate_Output()
     If MainAZC.StopProcess = 1 Then Goto finish
     Inc Process_Count
@@ -123,7 +128,19 @@ Public Sub Go()
     MainAZC.overalltime = MainAZC.Time_Correction
     Print "corrected = " & MainAZC.overalltime
     
-    
+    If (Output_Container = True) 
+      ' check if output container is empty:
+       IfmSensors.Read("OutputLevel")
+       Print "NotEmptyCriteria = " & IfmSensors.NotEmptyCriteria
+       If (IfmSensors.ResultSensorOutput < IfmSensors.NotEmptyCriteria) Then
+        Print "Output container not empty. Read = " & IfmSensors.ResultSensorOutput
+        Message.Title = "Attention"
+        Message.Error("Next output container not empty.", "Stop")
+        Wait 1
+        Goto finish
+       Endif
+       
+    Endif
 '  LOOP UNTIL (Input_Container = FALSE) OR (Output_Container = FALSE) OR (Process_Count = 8)
   Loop Until (Input_Container = False) Or (Output_Container = False) Or (Process_Count = Val(MainAZC.Var_Array[MainAZC.Max_Input_Containers, MainAZC.Var_Ini])) 'china
 finish:

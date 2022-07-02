@@ -41,12 +41,14 @@ SearchComment=False
 SearchString=True
 
 [OpenFile]
-Count=4
-Active=4
-File[1]=".src/MainAZC.class:10.250"
+Count=6
+Active=1
+File[1]=".src/MainAZC.class:28.443"
 File[2]=".src/MainAZC.form"
-File[3]=".src/Check.module:45.239"
-File[4]=".src/IfmSensors.module:0.41"
+File[3]=".src/Check.module:45.66"
+File[4]=".src/IfmSensors.module:0.31"
+File[5]=".src/CleanMachine.class:62.237"
+File[6]=".src/ProcessCTRL.class:38.137"
 
 [Watches]
 Count=1

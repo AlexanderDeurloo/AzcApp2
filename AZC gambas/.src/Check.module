@@ -63,7 +63,11 @@ End
 Public Sub Output_Container() As String
   Dim Status As Integer
   Dim Reply As String
-  Status = PlcInputs.Read("OutputContainerPresent")
+  If (MainAZC.Var_Array[MainAZC.SensorsViaBus, 0] = 1) Then
+      Status = IfmSensors.Read("OutputLevel")
+  Else
+    Status = PlcInputs.Read("OutputContainerPresent")
+  Endif
   If (Status = 1)
     Reply = "present"
   Else If (Status = 0)

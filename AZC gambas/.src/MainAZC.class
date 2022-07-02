@@ -306,12 +306,12 @@ Public Sub Init_Machine() As Boolean
 
     nogo = False
     
-    If (PlcInputs.Read("MagnesiumLevel") = 1) 
+    If Check.Magnesium_Level() = "true" Then
       Led.Control(Led_MagLevel, "on")
     Else 
       Led.Control(Led_MagLevel, "error")
     Endif
-    If (PlcInputs.Read("KaolineLevel") = 1)
+    If Check.Kaoline_Level() = "true" Then
       Led.Control(Led_KaolineLevel, "on")
     Else 
       Led.Control(Led_KaolineLevel, "error")
@@ -435,6 +435,17 @@ Public Sub Process_Start()
       Message.Error("No container at output detected")
       Goto Finish   ' was return
     Endif
+        ' check if output container is empty:
+     IfmSensors.Read("OutputLevel")
+     Print "NotEmptyCriteria = " & IfmSensors.NotEmptyCriteria
+     If (IfmSensors.ResultSensorOutput < IfmSensors.NotEmptyCriteria) Then
+      Print "Output container not empty. Read = " & IfmSensors.ResultSensorOutput
+      Message.Title = "Attention"
+      Message.Error("First output container not empty.", "Stop")
+      Wait 1
+      Goto finish
+     Endif
+
     If StopProcess = 1 Then Goto finish
     ProcessCTRL.Output_Container = True
     

@@ -19,6 +19,7 @@ Public Sub MoveStir(position As String)
         Wait 0.1
         If MainAZC.StopProcess = 1 Then Goto finish
       Loop Until Check.Stirrer_Rotate() = "clean"
+      Wait 2  ' allow demper to be pressed completely.
     Endif
     If MainAZC.StopProcess = 1 Then Goto finish
     If Check.Stirrer_Lift() = "up" Then
@@ -46,6 +47,7 @@ Public Sub MoveStir(position As String)
         Wait 0.2
         If MainAZC.StopProcess = 1 Then Goto finish
       Loop Until Check.Stirrer_Rotate() = "stir"
+      Wait 2 ' allow demper to be pressed completely.
     Endif
     If MainAZC.StopProcess = 1 Then Goto finish
     If (Check.Stirrer_Lift() = "up") Then
