@@ -83,7 +83,7 @@ Public Sub Read(Pin As String) As Integer
   Else If Pin = "TubePumpOpen"
     ModuleAddress = 114
     PinAddr = 2
-  Else If Pin = "InputCoverClosed"
+  Else If Pin = "InputCoverOpen"
     ModuleAddress = 114
     PinAddr = 4
   Else If Pin = "Spare7"

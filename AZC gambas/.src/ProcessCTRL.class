@@ -137,7 +137,7 @@ Public Sub Fill_Input() As Integer ' TODO: to be expanded with timeout capture a
   
   SerialCpuComm.TxRxFast("waterfillstop", 1)
   Print "before fill: " & Check.Fill_Status()
-  If PlcInputs.Read("InputCoverClosed") = "0"
+  If PlcInputs.Read("InputCoverOpen") = "1"
     Message.Title = "Attention"
     Message.Warning("Please close Input Cover")
     Wait 2
@@ -152,12 +152,12 @@ Public Sub Fill_Input() As Integer ' TODO: to be expanded with timeout capture a
     If MainAZC.StopProcess = 1 Then Goto finish
     Print "during fill: " & Check.Fill_Status()
     
-    If PlcInputs.Read("InputCoverClosed") = "0"
+    If PlcInputs.Read("InputCoverOpen") = "1"
       SerialCpuComm.TxRxFast("waterfillstop", 1)
       Message.Title = "Attention"
       Message.Warning("Please close Input Cover")
       Wait 2
-      If PlcInputs.Read("InputCoverClosed") = "1"
+      If PlcInputs.Read("InputCoverOpen") = "0"
         SerialCpuComm.TxRxFast("waterfillstart", 1)
       Endif
     Endif

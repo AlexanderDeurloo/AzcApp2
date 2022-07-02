@@ -119,7 +119,7 @@ Public Sub Input_Container_Fill() As String
   Dim Status As Integer
   Dim Reply As String
   reply = "ERR"
-  While PlcInputs.Read("InputCoverClosed") = "0"
+  While PlcInputs.Read("InputCoverOpen") = "1"
     If MainAZC.StopProcess = 1 Then Goto finish
     Message.Title = "Attention"
     Message.Warning("Please close Input Cover")

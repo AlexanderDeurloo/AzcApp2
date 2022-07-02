@@ -11,13 +11,13 @@ Public Sub Next_Input() As Integer
     Do
       Wait 0.1
       If MainAZC.StopProcess = 1 Then Goto finish
-      If PlcInputs.Read("InputCoverClosed") = "0"
+      If PlcInputs.Read("InputCoverOpen") = "1"
         PlcOutputs.Set("InputMotor", 0)
         Message.Title = "Attention"
         Message.Warning("Please close Input Cover")
         TimeOutCnt = 50
         Wait 2
-        If PlcInputs.Read("InputCoverClosed") = "1"
+        If PlcInputs.Read("InputCoverOpen") = "0"
           PlcOutputs.Set("InputMotor", 1)
         Endif
       Endif
@@ -40,13 +40,13 @@ Public Sub Next_Input() As Integer
   Do
     Wait 0.1
     If MainAZC.StopProcess = 1 Then Goto finish
-    If PlcInputs.Read("InputCoverClosed") = "0"
+    If PlcInputs.Read("InputCoverOpen") = "1"
       PlcOutputs.Set("InputMotor", 0)
       Message.Title = "Attention"
       Message.Warning("Please close Input Cover")
       TimeOutCnt = 50
       Wait 2
-      If PlcInputs.Read("InputCoverClosed") = "1"
+      If PlcInputs.Read("InputCoverOpen") = "0"
         PlcOutputs.Set("InputMotor", 1)
       Endif
     Endif
