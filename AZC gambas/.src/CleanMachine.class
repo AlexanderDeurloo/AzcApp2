@@ -17,12 +17,17 @@ Public Sub Magnesium(Duration As Integer)
   If Duration < 2 Then Duration = 2
   
   PlcOutputs.Set("AirTubeValveMagnesium", 1)
-  Wait 0.2
+  Do
+	   Wait 0.2
+  Loop Until Check.TubeValve_Magnesium() = "on"
   PlcOutputs.Set("WaterValveTubes", 1)
      Wait Duration
   PlcOutputs.Set("WaterValveTubes", 0)
   Wait 0.2
   PlcOutputs.Set("AirTubeValveMagnesium", 0)
+  Do
+	   Wait 0.2
+  Loop Until Check.TubeValve_Magnesium() = "off"
 End
 
 
@@ -129,7 +134,10 @@ Public Sub Stirrer_Setup(cleanTime As Integer)
   Wait 0.5
 
     PlcOutputs.Set("AirTubeValveSample", 1)
-  Wait 0.5
+  Do
+	   Wait 0.2
+  Loop Until Check.TubeValve_Sample() = "on"
+  Wait 0.2
     PlcOutputs.Set("WaterValveTubes", 1)
   TimerStirClean.Enabled = False
   TimerStirClean.Delay = cleanTime 'ms
@@ -150,7 +158,10 @@ Public Sub Stirrer_Stop()
     PlcOutputs.Set("WaterValveTubes", 0)
   Wait 0.5
     PlcOutputs.Set("AirTubeValveSample", 0)
-  Wait 0.5
+  Do
+	   Wait 0.2
+  Loop Until Check.TubeValve_Sample() = "off"
+  Wait 0.2
     PlcOutputs.Set("WaterValveStirrerClean", 0)
   Wait 0.5
   Stirrer.SetRpm(0)  'use serial control for stirrer
@@ -220,6 +231,9 @@ Public Sub Bowl_Setup()
   ' kaoline clean moment
   Print "clean kaoline tube"
   PlcOutputs.Set("AirTubeValveKaoline", 1)
+  Do
+	   Wait 0.2
+  Loop Until Check.TubeValve_Kaoline() = "on"
   Kaoline_Clean_Pending = True
   TimerKaolineClean.Delay = TimeTable.Kaoline_Valve_Clean_Time
   TimerKaolineClean.Enabled = True
@@ -232,7 +246,10 @@ Public Sub Bowl_Setup()
   PlcOutputs.Set("WaterValveTubes", 0)
   Wait 0.1
   PlcOutputs.Set("AirTubeValveKaoline", 0)
-  Wait 1
+  Do
+	   Wait 0.2
+  Loop Until Check.TubeValve_Kaoline() = "off"
+  Wait 0.5
   Print " do the bowl clean procedure"
   Tube_Clean_Pending = True
   PlcOutputs.Set("WaterValveTubes", 1)
@@ -321,6 +338,9 @@ Public Sub Bowl_Setup()
 finish:
   Print "Bowl clean finished"
   PlcOutputs.Set("AirTubeValveKaoline", 0)
+  Do
+	   Wait 0.2
+  Loop Until Check.TubeValve_Kaoline() = "off"
   PlcOutputs.Set("WaterValveTubes", 0)
   PlcOutputs.TubePump("off")
   PlcOutputs.Set("HpPumpPower", 0)

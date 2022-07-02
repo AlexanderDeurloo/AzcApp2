@@ -32,14 +32,23 @@ Public Sub Controls_To_Default() As Integer
   PlcOutputs.Set("HpPumpPower", 0)
   PlcOutputs.TubePump("off")
   PlcOutputs.Set("AirTubeValveMagnesium", 0)
+  Do
+	   Wait 0.1
+  Loop Until Check.TubeValve_Magnesium() = "off"
   PlcOutputs.Set("WaterValveStirrerClean", 0)
   PlcOutputs.Set("WaterValveHpPump", 0)
   PlcOutputs.Set("WaterValveTubes", 0)
   
   PlcOutputs.Set("InputMotor", 0)
   PlcOutputs.Set("AirTubeValveKaoline", 0)
+  Do
+	   Wait 0.1
+  Loop Until Check.TubeValve_Kaoline() = "off"
   PlcOutputs.TubePump("off")
   PlcOutputs.Set("AirTubeValveSample", 0)
+  Do
+	   Wait 0.1
+  Loop Until Check.TubeValve_Sample() = "off"
 
   PlcOutputs.OutputStoreRotate("off")
   PlcOutputs.BowlDrain("underbowl")

@@ -240,7 +240,10 @@ Public Sub Fill_Bowl()
   MainAZC.StatusText("Fill bowl...")
   Magn_Done = False
   PlcOutputs.Set("AirTubeValveMagnesium", 1)
-  Wait 0.5  'china
+  Do
+	   Wait 0.2
+  Loop Until Check.TubeValve_Magnesium() = "on"
+  Wait 0.2
   PlcOutputs.TubePump("on")
   TimerMagn.Delay = TimeTable.Magnesium_Fill_Time ' 3000  ' debug
   TimerMagn.Enabled = True
@@ -251,7 +254,10 @@ Public Sub Fill_Bowl()
   PlcOutputs.TubePump("off")
   Wait 0.5  'china
   PlcOutputs.Set("AirTubeValveMagnesium", 0)
-  Wait 0.5
+  Do
+	   Wait 0.2
+  Loop Until Check.TubeValve_Magnesium() = "off"
+  Wait 0.2
   ' fill water (pump required)
   Water_Done = False
   PlcOutputs.Set("WaterValveTubes", 1)
@@ -268,6 +274,9 @@ Public Sub Fill_Bowl()
   ' fill sample
   Sample_Done = False
   PlcOutputs.Set("AirTubeValveSample", 1)
+  Do
+	   Wait 0.2
+  Loop Until Check.TubeValve_Sample() = "on"
   PlcOutputs.TubePump("on")
   TimerSample.Delay = TimeTable.Sample_Time '10000 ' debug
   TimerSample.Enabled = True
@@ -276,11 +285,17 @@ Public Sub Fill_Bowl()
     If MainAZC.StopProcess = 1 Then Goto finish
   Loop Until Sample_Done = True
   PlcOutputs.Set("AirTubeValveSample", 0)
+  Do
+	   Wait 0.2
+  Loop Until Check.TubeValve_Sample() = "off"
   PlcOutputs.TubePump("off")
   Wait 1
   ' fill kaoline
   Kaoline_Done = False
   PlcOutputs.Set("AirTubeValveKaoline", 1)
+  Do
+	   Wait 0.2
+  Loop Until Check.TubeValve_Kaoline() = "on"
   PlcOutputs.TubePump("on")
   TimerKaoline.Delay = TimeTable.Kaoline_Fill_Time '10000 ' debug
   Timerkaoline.Enabled = True
@@ -289,16 +304,29 @@ Public Sub Fill_Bowl()
     If MainAZC.StopProcess = 1 Then Goto finish
   Loop Until Kaoline_Done = True
   PlcOutputs.Set("AirTubeValveKaoline", 0)
+  Do
+	   Wait 0.2
+  Loop Until Check.TubeValve_Kaoline() = "off"
 'extra: clean tube TO BOWL with water:
   PlcOutputs.Set("WaterValveTubes", 1)
   Wait 5
 finish:
   PlcOutputs.Set("AirTubeValveMagnesium", 0)
+  Do
+	   Wait 0.1
+  Loop Until Check.TubeValve_Magnesium() = "off"
+
   PlcOutputs.Set("WaterValveTubes", 0)
   PlcOutputs.Set("AirTubeValveKaoline", 0)
+  Do
+	   Wait 0.2
+  Loop Until Check.TubeValve_Kaoline() = "off"
   PlcOutputs.TubePump("off")
   PlcOutputs.Set("AirTubeValveSample", 0)
-  Wait 1
+  Do
+	   Wait 0.2
+  Loop Until Check.TubeValve_Sample() = "off"
+  Wait 0.5
 End
 
 Public Sub Stop_Stir()

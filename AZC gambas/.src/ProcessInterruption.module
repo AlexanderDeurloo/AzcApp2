@@ -12,8 +12,17 @@ Public Sub Stop()
   PlcOutputs.Set("WaterValveHpPump", 0)
   PlcOutputs.Set("WaterValveTubes", 0)
   PlcOutputs.Set("AirTubeValveKaoline", 0)
+  Do
+	   Wait 0.1
+  Loop Until Check.TubeValve_Kaoline() = "off"
   PlcOutputs.Set("AirTubeValveMagnesium", 0)
+  Do
+	   Wait 0.1
+  Loop Until Check.TubeValve_Magnesium() = "off"
   PlcOutputs.Set("AirTubeValveSample", 0)
+  Do
+	   Wait 0.1
+  Loop Until Check.TubeValve_Sample() = "off"
   PlcOutputs.TubePump("off")
 
   FreqCtrl.SetFreq(0.0, "OFF")
