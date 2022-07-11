@@ -36,7 +36,10 @@ Public Sub SetFreq(Speed As Float, Mode As String)  ' Speed in Hz.
 
   If Speed < 0.5
     FreqSetting = 50
-    Print "Speed to low. Adjusted to 0.5Hz"
+    Print "Speed too low. Adjusted to 0.50Hz"
+  Else If Speed > 85
+    FreqSetting = 8500
+    Print "Speed too high. Adjusted to 85.00Hz"
   Else
     FreqSetting = Speed * 100
   Endif

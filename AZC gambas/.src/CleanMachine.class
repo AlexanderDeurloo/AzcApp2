@@ -313,7 +313,6 @@ Public Sub Bowl_Setup()
   Loop Until Bowl_Clean_Pending = False
 
 
-  'PlcOutputs.Set("WaterValveHpPump", 1)
   PlcOutputs.Set("HpPumpPower", 1)
   Bowl_Clean_Pending = True
   TimerBowlClean.Delay = TimeTable.Bowl_Clean_Phase3_Time 'ms
@@ -325,6 +324,17 @@ Public Sub Bowl_Setup()
   Loop Until Bowl_Clean_Pending = False
   PlcOutputs.Set("HpPumpPower", 0)
 
+
+  PlcOutputs.Set("BowlCleanLowPressure", 1)
+  Bowl_Clean_Pending = True
+  TimerBowlClean.Delay = TimeTable.Bowl_Clean_Phase3_Time 'ms
+  TimerBowlClean.Enabled = True
+  Print "timer bowl phase3 started for low pressure..." & CStr(TimeTable.Bowl_Clean_Phase3_Time) & "msec"
+  Do
+    Wait 0.1
+    If MainAZC.StopProcess = 1 Then Goto finish
+  Loop Until Bowl_Clean_Pending = False
+  PlcOutputs.Set("BowlCleanLowPressure", 0)
 
   'Wait 2
   'FreqCtrl.SetFreq(75, "ON")
@@ -344,6 +354,7 @@ finish:
   PlcOutputs.Set("WaterValveTubes", 0)
   PlcOutputs.TubePump("off")
   PlcOutputs.Set("HpPumpPower", 0)
+  PlcOutputs.Set("BowlCleanLowPressure", 0)
   Return
 End
 

@@ -26,7 +26,7 @@ Public Var_Recipe As Integer = 1 ' second colomn
 
 Public Max_Input_Containers As Integer = 1
 Public Max_Output_Containers As Integer = 2
-Public Input_Containers_Fill_Timeout As Integer = 3
+Public MaxBowlFreq As Integer = 3
 Public Default_Recipe As Integer = 4
 Public Default_Directory As Integer = 5
 Public Kaoline_Clean_Time As Integer = 6
@@ -730,7 +730,7 @@ Public Sub Menu_Recipes_Default_Click()
   Print New_Default_Recipe
   StringToStore = Var_Array[Max_Input_Containers, Var_Ini] & "\n" &
                   Var_Array[Max_Output_Containers, Var_Ini] & "\n" &
-                  Var_Array[Input_Containers_Fill_Timeout, Var_Ini] & "\n" &
+                  Var_Array[MaxBowlFreq, Var_Ini] & "\n" &
                   New_Default_Recipe & "\n" &
                   Var_Array[Default_Directory, Var_Ini] & "\n" &
                   Var_Array[Kaoline_Clean_Time, Var_Ini] & "\n" &

@@ -212,6 +212,7 @@ Public Sub Start_Stir()
 End
 
 Public Sub Start_Bowl()
+  Dim FreqSetting As Float
   TimerBowlStartDelay.Delay = Bowl_Delay
   TimerBowlStartDelay.Enabled = True
   Do
@@ -219,10 +220,13 @@ Public Sub Start_Bowl()
     If MainAZC.StopProcess = 1 Then Goto finish
   Loop Until Bowl_May_Go = True
   MainAZC.StatusText("Start up bowl...")
-  
- 
+
   TimerBowlSpeedup.Delay = TimeTable.Motor_ACC ' 10000
-  FreqCtrl.SetFreq(78.75, "ON")
+  FreqSetting = Val(MainAZC.Var_Array[MainAZC.MaxBowlFreq, 0])
+  Print "File says MaxBowlFreq is " & FreqSetting
+  FreqCtrl.SetFreq(FreqSetting, "ON")
+
+  
   ' TODO: link setting to time in file and visa versa perhaps
   Bowl_Running = True
   Bowl_On_Speed = False

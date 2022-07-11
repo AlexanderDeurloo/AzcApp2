@@ -5,6 +5,9 @@ IFM sensor read ini file: ~/Settings/AZC_Sensors.ini
 Sensor IP Address = 192.168.1.200
 let's connect to Cpu
 Serial name for cpu comm is /dev/CPU_PORT
+Cpu didn't reply properly: 
+CpuPresent
+Wait until light show is done. 1.
 Wait until light show is done. 2.
 Cpu replied properly: CpuPresent
 Send config to freq controller
@@ -15,93 +18,10 @@ IFM sensor Read: SeparatorLevel
 IFM sensor Read: KaolineLevel
 clean flag = 
 false
-WaterFillTimeout=25000
+WaterFillTimeout=30000
 /home/pi/Settings/Quick.rcp
-Process start
-IFM sensor Read: SeparatorLevel
-IFM sensor Read: KaolineLevel
-Synchronization started..
-Speed to low. Adjusted to 0.5Hz
-Stop bowl motor
-Stirrer speed set to 0 rpm.
-Returncode stirrer lib = 8
-end sync: 0
-still processing 
-Input_Container: find one...
-IFM sensor Read: OutputLevel
-IFM sensor Read: OutputLevel
-NotEmptyCriteria = 114
-Output container not empty. Read = 113
-finished
-Process start
-IFM sensor Read: SeparatorLevel
-IFM sensor Read: KaolineLevel
-Synchronization started..
-Speed to low. Adjusted to 0.5Hz
-Stop bowl motor
-Stirrer speed set to 0 rpm.
-Returncode stirrer lib = 8
-end sync: 0
-still processing 
-Input_Container: find one...
-IFM sensor Read: OutputLevel
-IFM sensor Read: OutputLevel
-NotEmptyCriteria = 114
+setup bowl clean
 overalltime = 210
-let's look for clean at power-on: 
-before fill: stopped
-fill started: busy
-during fill: busy
-during fill: busy
-during fill: busy
-during fill: busy
-during fill: busy
-during fill: busy
-during fill: done
-Stirrer speed set to 650 rpm.
-Returncode stirrer lib = 6
-FreqSetting = 7875
-Stirrer speed set to 150 rpm.
-Returncode stirrer lib = 6
-Stirrer speed set to 0 rpm.
-Returncode stirrer lib = 6
-cleantime = 3000
-Stirrer speed set to 150 rpm.
-Returncode stirrer lib = 6
-timer stir started...3000msec
-Move drain away from bowl. Current position = on
-Move store to capture. Current position = on
-Wait for drain to be removed...
-Drain removed. Wait for store to arrive at capture...
-stir clean TIMER END
-Output store arrived at capture.
-Speed to low. Adjusted to 0.5Hz
-Stop bowl motor
-Set timer to wait for motor DEC to 80000
-Bowl stopped. Wait for capture...
-We arrived at wait_for_capture
-Time for capturing is set is 100000
-cleantime = 0
-stir clean pending = 
-Stirrer speed set to 0 rpm.
-Returncode stirrer lib = 6
-stir clean is fini
-Stirrer speed set to 2100 rpm.
-Returncode stirrer lib = 6
-stir clean TIMER END
-Stirrer speed set to 0 rpm.
-Returncode stirrer lib = 6
-Move to rest. Current position = off
-Move drain under bowl. Current position = off
-Wait for drain to arrive under bowl...
-Drain arrived under bowl. Wait for store to arrive at rest...
-Output store arrived at rest.
-IFM sensor Read: OutputLevel
-Output level is 119
-IFM sensor Read: OutputLevel
-Debug: starttime = 66.5087624220032
-Debug: correction = 230
-nu de bowl dan
 bowl clean
 wait for stir to complete
 stir is ready, bowl can continue
@@ -127,97 +47,13 @@ timer bowl pause started...5000msec
 bowl clean timer expired
 timer bowl phase3 started...3000msec
 bowl clean timer expired
-Speed to low. Adjusted to 0.5Hz
-Stop bowl motor
-bowl is clean and all related ctrls are off
-Bowl clean finished
-corrected = 230
-IFM sensor Read: OutputLevel
-NotEmptyCriteria = 114
-before fill: stopped
-fill started: busy
-during fill: busy
-during fill: busy
-during fill: busy
-during fill: done
-Stirrer speed set to 650 rpm.
-Returncode stirrer lib = 6
-FreqSetting = 7875
-Stirrer speed set to 150 rpm.
-Returncode stirrer lib = 6
-Stirrer speed set to 0 rpm.
-Returncode stirrer lib = 6
-cleantime = 3000
-Stirrer speed set to 150 rpm.
-Returncode stirrer lib = 6
-timer stir started...3000msec
-Move drain away from bowl. Current position = on
-Move store to capture. Current position = on
-Wait for drain to be removed...
-Drain removed. Wait for store to arrive at capture...
-stir clean TIMER END
-Output store arrived at capture.
-Speed to low. Adjusted to 0.5Hz
-Stop bowl motor
-Set timer to wait for motor DEC to 80000
-Bowl stopped. Wait for capture...
-We arrived at wait_for_capture
-Time for capturing is set is 100000
-cleantime = 0
-stir clean pending = 
-Stirrer speed set to 0 rpm.
-Returncode stirrer lib = 6
-stir clean is fini
-Stirrer speed set to 2100 rpm.
-Returncode stirrer lib = 6
-stir clean TIMER END
-Stirrer speed set to 0 rpm.
-Returncode stirrer lib = 6
-Move to rest. Current position = off
-Move drain under bowl. Current position = off
-Wait for drain to arrive under bowl...
-Drain arrived under bowl. Wait for store to arrive at rest...
-Output store arrived at rest.
-IFM sensor Read: OutputLevel
-Output level is 118
-IFM sensor Read: OutputLevel
-Debug: starttime = 322.085560971002
-Debug: correction = 234
-nu de bowl dan
-bowl clean
-wait for stir to complete
-stir is ready, bowl can continue
-Speed to low. Adjusted to 0.5Hz
-Stop bowl motor
-wait until bowl stopped(simple timer)
-,
-make output store position is in rest
-move drain under bowl
-bowl lowspeed
-FreqSetting = 200
-clean kaoline tube
-kaoline tube clean time expired
- do the bowl clean procedure
-FreqSetting = 50
-timer bowl phase1 started...3000msec
-bowl clean timer expired
-timer bowl pause started...5000msec
-bowl clean timer expired
-timer bowl phase2 started...3000msec
-bowl clean timer expired
-timer bowl pause started...5000msec
-bowl clean timer expired
-timer bowl phase3 started...3000msec
+timer bowl phase3 started for low pressure...3000msec
 bowl clean timer expired
 Speed to low. Adjusted to 0.5Hz
 Stop bowl motor
 bowl is clean and all related ctrls are off
 Bowl clean finished
-corrected = 234
-IFM sensor Read: OutputLevel
-NotEmptyCriteria = 114
-Output container not empty. Read = 112
-finished
+setup bowl done
 Speed to low. Adjusted to 0.5Hz
 Stop bowl motor
 Stirrer speed set to 0 rpm.

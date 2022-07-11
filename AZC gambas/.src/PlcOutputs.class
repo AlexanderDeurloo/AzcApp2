@@ -97,7 +97,7 @@ Public Sub Set(Pin As String, State As Integer)
   Else If Pin = "OutputSensorTeach"
     ModuleAddress = 184     ' 184 = mod31, last 6 pins
     PinAddr = 1
-  Else If Pin = "Spare1"
+  Else If Pin = "BowlCleanLowPressure"
     ModuleAddress = 184
     PinAddr = 2
   Else If Pin = "Spare2"
