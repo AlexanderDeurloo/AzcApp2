@@ -10,6 +10,9 @@
     { Menu_Home_About Menu
       Text = Shortcut(("About"), "A")
     }
+    { ReInit Menu
+      Text = Shortcut(("Re-Init"), "R")
+    }
     { Menu_Home_Exit Menu
       Text = Shortcut(("Exit"), "E")
     }

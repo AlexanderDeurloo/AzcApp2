@@ -9,7 +9,7 @@ Public ResultSensorOutput As Integer
 Public NotEmptyCriteria As Integer
 
 Public ResultOld As New Integer[4]
-Public InitSensors_Path As String = "~/Settings/AZC_Sensors.ini"
+Public InitSensors_Path As String = "~/AzcSettings/AZC_Sensors.ini"
 
 Public SensorIpAddr As String
 Public SensorCount As Integer

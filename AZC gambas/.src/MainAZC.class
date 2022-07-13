@@ -62,7 +62,7 @@ Public CONFIRM As Boolean = False
 Public StopProcess As Integer = 0     ' controlled by stop button and processctrl.
 Public DumpI As Integer = 0
 
-Public Ini_Path As String = "~/Settings/AZC.ini"
+Public Ini_Path As String = "~/AzcSettings/AZC.ini"
 
 'Public ArmedForShutdown As Boolean
 
@@ -1063,3 +1063,12 @@ Public Sub Menu_Adv_CleanMagnesium_Click()
 End
 
 
+
+Public Sub ReInit_Click()
+  Dim Start_Recipe As String
+  Print "Re-init selected: reload ini file and recipe"
+  Read_File(Ini_Path, Var_Ini)    ' load ini file   ' temporary stored on the server. Find better location.
+  Start_Recipe = Var_Array[Default_Directory, Var_Ini] & Var_Array[Default_Recipe, Var_Ini]
+  Read_File(Start_Recipe, Var_Recipe)  ' load recipe
+  Use_Recipe()
+End

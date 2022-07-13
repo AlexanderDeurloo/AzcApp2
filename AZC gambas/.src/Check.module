@@ -310,3 +310,19 @@ Public Sub Kaoline_Motor() As String
   Endif
   Return Reply
 End
+
+Public Sub TubePump_Cover() As String
+  Dim Status As Integer
+  Dim Reply As String
+  
+  Status = PlcInputs.Read("TubePumpOpen")
+  
+  If (Status = 1)
+    Reply = "open"
+  Else If (Status = 0)
+    Reply = "closed"
+  Else
+    Reply = "ERR"
+  Endif
+  Return Reply
+End

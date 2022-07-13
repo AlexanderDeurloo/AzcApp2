@@ -256,10 +256,16 @@ End
 Public Sub TubePump(State As String)
   If State = "on"
     Set("TubePumpPower", 1)
-    If PlcInputs.Read("TubePumpOpen") = 1
+
+    If Check.TubePump_Cover() = "open" Then
       Message.Title = "Attention"
-      Message.Error("Tubepump isn't running. Not closed?")
+      Message.Error("Tubepump isn't running. Not closed and/or locked?")
     Endif
+  
+    'If PlcInputs.Read("TubePumpOpen") = 1
+'      Message.Title = "Attention"
+ '     Message.Error("Tubepump isn't running. Not closed?")
+  '  Endif
   Else
     Set("TubePumpPower", 0)
   Endif

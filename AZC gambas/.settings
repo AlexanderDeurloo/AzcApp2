@@ -41,15 +41,17 @@ SearchComment=False
 SearchString=True
 
 [OpenFile]
-Count=7
-Active=6
+Count=9
+Active=2
 File[1]=".src/MainAZC.form"
-File[2]=".src/PlcOutputs.class:37.99"
+File[2]=".src/PlcOutputs.class:54.241"
 File[3]=".src/CleanMachine.class:19.339"
-File[4]=".src/MainAZC.class:0.701"
+File[4]=".src/MainAZC.class:37.871"
 File[5]=".src/ProcessCTRL.class:0.226"
-File[6]=".src/FreqCtrl.module:28.33"
-File[7]=".src/IfmSensors.module:58.33"
+File[6]=".src/FreqCtrl.module:0.16"
+File[7]=".src/IfmSensors.module:42.11"
+File[8]=".src/Check.module:39.317"
+File[9]=".src/PlcInputs.class:29.82"
 
 [Watches]
 Count=1
